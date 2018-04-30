@@ -14,7 +14,7 @@ are aiming to create a suite of diagnostic tools that are easy for users
 to integrate into their own work flow, and make plots that are intuitive
 and comprehensive.
 
-![EnKF](AssimAnim.gif)
+![EnKF](./data/AssimAnim.jpg)
 
 
 The typical set-up is a "twin experiment", where you
