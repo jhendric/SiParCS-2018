@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-
+import pandas as pd
 '''
 
 Redo of "3D_plot_initial.py" to have structuring more appropriate for
@@ -105,55 +105,65 @@ class plot_2D_obs_initial:
         self.my_locs = self.location
         self.my_keys = self.obs_keys
         self.my_vert_types = self.vert_type
-        self.my_times = self.time[self.inds]
+        self.my_times = self.time
 
         
         self.my_lons = self.my_locs[:, 0]
         self.my_lats = self.my_locs[:, 1]
         self.my_z = self.my_locs[:, 2]
-        self.vert_type = self.my_vert_types[self.loc_inds]
-        self.keys = self.my_keys[self.loc_inds]
-        self.time = self.my_times[self.loc_inds]
+        print('here')
+        '''
+        pd_array = pd.DataFrame({'obs' : self.my_obs.values,
+                                 'keys' : self.my_keys.values,
+                                 'lons' : self.my_lons.values,
+                                 'lats' : self.my_lats.values,
+                                 'z' : self.my_z.values,
+                                 'times' : self.my_times.values})'''
 
+
+        #index = pd.MultiIndex.from_tuples(tuples, names = ['times', 'lons', 'lats', 'z', 'obs', 'keys'])
+        #print(index)
+        index = pd.DataFrame
+        pd_array = pd.DataFrame({'obs' : self.my_obs.values,
+                                 'keys' : self.my_keys.values,
+                                 'lons' : self.my_lons.values,
+                                 'lats' : self.my_lats.values,
+                                 'z' : self.my_z.values,
+                                 'times' : self.my_times.values})
+        pd_array.set_index(['times', 'lons', 'lats', 'z'], inplace = True)
+        pd_array.sort_index(inplace = True)
+        pd_array.reset_index()
+        #print(pd_array.index)
+        #print(pd_array)
+        xa_array = xa.DataArray(pd_array)
+        #print(self.my_obs.expand_dims('lons', self.my_lons.values))
+        #print(xa_array)
+        xa_array.unstack('dim_0')
+        print(xa_array)
+        print('here')
+        '''xa_set = xa.Dataset({'obs' : self.my_obs,
+                                 'lons' : self.my_lons,
+                                 'lats' : self.my_lats,
+                                 'z' : self.my_z,
+                                 'times' : self.my_times})'''
+        print('here')
+        #xa_array_grouped = xa_set.groupby('times')
+        #pd_array_grouped = pd_array.groupby('times').groupby('lons')
+        #print('here')
+        #pd_array_final = pd_array_grouped
+        #print(type(pd_array_final))
+        #print(pd_array_final.groups)
+        #print(np.array([self.my_times, [self.my_lons, [self.my_lats, [self.my_z, [self.my_obs, [self.my_keys]]]]]]))
+        #print(xa.DataArray(pd_array_final))
         
-        print(self.keys)
+        #self.data = xa.DataArray(self.my_obs, zip(
         
-        #print(self.obs.size)
-        
-        if self.my_QC.size > 0:
-            self.QC = self.my_QC[self.loc_inds]
-        else:
-            self.QC = np.array([])
 
-        self.vert_types = np.unique(self.vert_type)
-        self.num_vert_types = self.vert_types.size
-
-        for vert_type in self.vert_types:
-            print(vert_type)
-            if vert_type == -2: #Undefined vertical units, but positive is up
-                self.vert_pos_dir = 'up'
-                self.vert_units = 'unknown'
-            elif vert_type == -1: #Vertical units are surface
-                self.vert_pos_dir = 'up'
-                self.vert_units = 'surface'
-            elif vert_type == 1: #Vertical units are level where 1 is uppermost
-                self.vert_pos_dir = 'down'
-                self.vert_units = 'model level'
-            elif vert_type == 2: #Vertical units are pressure
-                self.vert_pos_dir = 'down'
-                self.vert_units = 'pressure'
-            elif vert_type == 3: #Vertical units are heights
-                self.vert_pos_dir = 'up'
-                self.vert_units = 'height'
-
-                '''A WORLD OCEAN DATABASE CAVEAT THAT I HAVE NOT IMPLEMENTED'''
-
-        #print(self.vert_pos_dir, self.vert_units)
-        #print(self.z)
-
-        print(np.stack(np.array([self.lons, self.obs]), axis = 0).shape)
+        #print(np.stack(np.array([self.lons, self.obs]), axis = 0).shape)
         #self.data=np.array([self.lats, self.lons, self.z, self.time, self.]).transpose()
-        self.data = np.array([self.time, self.lons, self.lats, self.z, self.obs])
+        #self.data = np.array([self.my_times, self.my_lons, self.my_lats, self.my_z, self.my_obs])
+
+        quit()
         #print(np.unique(self.lons).size, np.unique(self.lats).size, np.unique(self.time).size, np.unique(self.z).size, np.unique(self.obs).size)
         #print(self.data.shape)
         
@@ -174,6 +184,9 @@ class plot_2D_obs_initial:
         ''' obs_type_string, region, copy_string, QC_string, max_QC
         self.region = np.array(region) #e.g. [0, 360, -90, 90, -inf, inf] or [0, 360, -90, 90]
         
+        'RADIOSONDE_TEMPERATURE',
+                  [0, 360, -90, 90, -float('inf'), float('inf')], 'observation', '', 2, 1)
+
         if copy_string.lower() == 'all':
             self.copy_string = self.dataset['CopyMetaData'].values
         else:
@@ -347,10 +360,43 @@ class plot_2D_obs_initial:
         self.vert_type = self.my_vert_types[self.loc_inds]
         self.keys = self.my_keys[self.loc_inds]
         self.time = self.my_times[self.loc_inds]
+
+        
+        if self.my_QC.size > 0:
+            self.QC = self.my_QC[self.loc_inds]
+        else:
+            self.QC = np.array([])
+
+        
+        self.vert_types = np.unique(self.vert_type)
+        self.num_vert_types = self.vert_types.size
+
+        for vert_type in self.vert_types:
+            print(vert_type)
+            if vert_type == -2: #Undefined vertical units, but positive is up
+                self.vert_pos_dir = 'up'
+                self.vert_units = 'unknown'
+            elif vert_type == -1: #Vertical units are surface
+                self.vert_pos_dir = 'up'
+                self.vert_units = 'surface'
+            elif vert_type == 1: #Vertical units are level where 1 is uppermost
+                self.vert_pos_dir = 'down'
+                self.vert_units = 'model level'
+            elif vert_type == 2: #Vertical units are pressure
+                self.vert_pos_dir = 'down'
+                self.vert_units = 'pressure'
+            elif vert_type == 3: #Vertical units are heights
+                self.vert_pos_dir = 'up'
+                self.vert_units = 'height'
+
+                ''' '''A WORLD OCEAN DATABASE CAVEAT THAT I HAVE NOT IMPLEMENTED''' '''
+
+        #print(self.vert_pos_dir, self.vert_units)
+        #print(self.z)
+
         '''
         
-plotter = plot_2D_obs_initial('../obs_series/obs_epoch_001.nc', 'RADIOSONDE_TEMPERATURE',
-                  [0, 360, -90, 90, -float('inf'), float('inf')], 'observation', '', 2, 1)
+plotter = plot_2D_obs_initial('../obs_series/obs_epoch_001.nc')
                 
 
 #def __init__(self, file_path, obs_type_string, region, copy_string, QC_string, max_QC, verbose):   
