@@ -19,13 +19,15 @@ inf is float('inf')
 
 '''
 
-class plot_2D_initial:
+class plot_2D_obs_initial:
 
     def __init__(self, file_path, obs_type_string, region, copy_string, QC_string, max_QC, verbose):
         
         self.dataset = xa.open_dataset(file_path)
         self.obs_type_string = obs_type_string #e.g. 'RADIOSONDE_U_WIND_COMPONENT', 'ALL'
         self.region = np.array(region) #e.g. [0, 360, -90, 90, -inf, inf] or [0, 360, -90, 90]
+
+        
         
         if copy_string.lower() == 'all':
             self.copy_string = self.dataset['CopyMetaData'].values
@@ -36,38 +38,39 @@ class plot_2D_initial:
         self.max_QC = max_QC #e.g. 2
         self.verbose = verbose #True or False
 
-
         def bytes_to_string(self, bytes):
             return ''.join(bytes.decode('UTF-8').split())
 
         bytes_to_string = np.vectorize(bytes_to_string)
         
+        
         self.obs_types = self.dataset['ObsTypes']
-        print(type(self.obs_types[0]))
+        #print(type(self.obs_types[0]))
         self.obs_type_strings = bytes_to_string(self, self.dataset['ObsTypesMetaData'].values)
-        print(type(self.obs_type_strings[0]))
+        #print(type(self.obs_type_strings[0]))
         self.copy_strings = bytes_to_string(self, self.dataset['CopyMetaData'].values)
-        print(type(self.copy_strings[0]))
+        #print(type(self.copy_strings[0]))
         self.QC_strings = bytes_to_string(self, self.dataset['QCMetaData'].values)
-        print(type(self.QC_strings[0]))
+        #print(type(self.QC_strings[0]))
         
         self.time = self.dataset['time'] #may need to change these three lines to .values
-        print(type(self.time[0]))
+        #print(type(self.time[0]))
         self.obs_type = self.dataset['obs_type']
-        print(type(self.obs_type[0]))
+        #print(type(self.obs_type[0]))
         self.obs_keys = self.dataset['obs_keys']
-        print(type(self.obs_keys[0]))
+        #print(type(self.obs_keys[0]))
         self.vert_type = self.dataset['which_vert']
-        print(type(self.vert_type[0]))
+        #print(type(self.vert_type[0]))
         '''
         MISSING MISSING DATA ACCOUNTABILITY HERE
         '''
         self.location = self.dataset['location']
-        print(type(self.location[0]))
+        #print(type(self.location[0]))
         self.obs = self.dataset['observations']
-        print(type(self.obs[0]))
+        print(self.obs.size)
+        #print(type(self.obs[0]))
         self.QC = self.dataset['qc']
-        print(type(self.QC[0]))
+        #print(type(self.QC[0]))
 
         self.my_types = np.unique(self.obs_type.values)
         self.time_units = self.time.dtype
@@ -90,7 +93,7 @@ class plot_2D_initial:
 
             #find matching copy
             for i in range(0, self.num_copies):
-                meta_data_no_white = ''.join(str(copy_meta_data.values[i].split()))
+                meta_data_no_white = ''.join(bytes_to_string(self, copy_meta_data.values[i].split()))
                 if meta_data_no_white == copy_string_no_white:
                     copy_index = i
                     break
@@ -106,9 +109,9 @@ class plot_2D_initial:
 
         else:
             self.my_ind_array = np.where(self.obs_type_strings == self.obs_type_string)[0]
-            print(self.obs_type_strings[0])
-            print(self.obs_type_string)
-            print(self.my_ind_array)
+            #print(self.obs_type_strings[0])
+            #print(self.obs_type_string)
+            #print(self.my_ind_array)
             if self.my_ind_array.size > 0:
                 self.my_ind = self.my_ind_array[0] + 1 #first instance of my_ind
                 self.inds = np.where(self.obs_type.values == self.my_ind)[0] #all instances of associated type
@@ -121,6 +124,7 @@ class plot_2D_initial:
         #similar concerns for subsequent assignments
         #print(self.inds, self.my_type_ind)
         self.my_obs = self.obs[self.inds, self.my_type_ind].values
+        print(self.my_obs.size)
         self.my_locs = self.location[self.inds].values
         self.my_keys = self.obs_keys[self.inds].values
         self.my_vert_types = self.vert_type[self.inds].values
@@ -174,10 +178,6 @@ class plot_2D_initial:
         #may not be possible with numpy array, may need some numpy function
         lons = self.my_locs[:, 0]%360.0
 
-        #find correct latitudes and levels
-        #lat_logical = np.where(self.my_locs[1] >= y_min and self.my_locs[1] <= y_max) #may not work, see command above
-        #lvl_logical = np.where(self.my_locs[2] >= z_min and self.my_locs[2] <= z_max) #see above
-
         #Need to revise the above code to no longer be a logical (should be a way to do it as one where)
         
         
@@ -187,7 +187,6 @@ class plot_2D_initial:
         #would be more pythonic
 
         self.loc_inds = []
-        print(self.loc_inds)
         if (x_min == x_max):
             for i in range(self.my_locs[:, 0].size):
                 #print(i)
@@ -260,13 +259,17 @@ class plot_2D_initial:
         self.num_obs = self.loc_inds.size
         self.lons = self.my_locs[self.loc_inds, 0]
         self.lats = self.my_locs[self.loc_inds, 1]
-        self.z = self.my_locs[self.loc_inds, 2]        
+        self.z = self.my_locs[self.loc_inds, 2]
         self.obs = self.my_obs[self.loc_inds]
         self.vert_type = self.my_vert_types[self.loc_inds]
         self.keys = self.my_keys[self.loc_inds]
         self.time = self.my_times[self.loc_inds]
 
-        print(self.obs)
+        
+        
+        print(self.keys)
+        
+        #print(self.obs.size)
         
         if self.my_QC.size > 0:
             self.QC = self.my_QC[self.loc_inds]
@@ -277,6 +280,7 @@ class plot_2D_initial:
         self.num_vert_types = self.vert_types.size
 
         for vert_type in self.vert_types:
+            print(vert_type)
             if vert_type == -2: #Undefined vertical units, but positive is up
                 self.vert_pos_dir = 'up'
                 self.vert_units = 'unknown'
@@ -295,11 +299,34 @@ class plot_2D_initial:
 
                 '''A WORLD OCEAN DATABASE CAVEAT THAT I HAVE NOT IMPLEMENTED'''
 
+        #print(self.vert_pos_dir, self.vert_units)
+        #print(self.z)
+
+        print(np.stack(np.array([self.lons, self.obs]), axis = 0).shape)
+        #self.data=np.array([self.lats, self.lons, self.z, self.time, self.]).transpose()
+        self.data = np.array([self.time, self.lons, self.lats, self.z, self.obs])
+        #print(np.unique(self.lons).size, np.unique(self.lats).size, np.unique(self.time).size, np.unique(self.z).size, np.unique(self.obs).size)
+        #print(self.data.shape)
+        
+        #print(self.obs.shape, self.lons.shape, self.lats.shape, self.z.shape, self.keys.shape, self.time.shape)
+        #print(self.lons.flatten().shape, self.lats.flatten(), self.z.flatten(), self.keys.flatten(), self.time.flatten())
+        #Create an xarray DataArray to hold everything. Will need to account for multiple ob types later
+        #by instead making a Dataset
+
+        self.data = xa.DataArray(self.obs, coords =
+                                 {'lon': self.lons, 'lat': self.lats, 'vert': self.z,
+                                   'key' : self.keys, 'time': self.time})
+                                 #attrs = {'vert_units': self.vert_units,'vert_pos_dir' : self.vert_pos_dir}) 
+                                                     
+        
+    def plot(self):
+        p = 
+        
+        
         
 
-
 plotter = plot_2D_initial('../obs_series/obs_epoch_001.nc', 'RADIOSONDE_TEMPERATURE',
-                  [350, 20, -90, 90, -float('inf'), float('inf')], 'ALL', '', 2, 1)
+                  [0, 360, -90, 90, -float('inf'), float('inf')], 'observation', '', 2, 1)
                 
 
 #def __init__(self, file_path, obs_type_string, region, copy_string, QC_string, max_QC, verbose):                                

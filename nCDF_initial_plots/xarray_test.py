@@ -7,14 +7,24 @@ import numpy as np
 '''
 
 Work in reading and plotting netCDF files. 
-Currently non-commented lines generate a 3D plot of bgrid Temperature data.
+Managed to plot 2D and 3D data from bgrid and cam sample files.
 
 '''
 
-inno = xarray.open_dataset('Innovation.nc')
-init = xarray.open_dataset('preassim.nc')
-post = xarray.open_dataset('analysis.nc')
-cam = xarray.open_dataset('caminput.nc')
+#inno = xarray.open_dataset('Innovation.nc')
+#init = xarray.open_dataset('preassim.nc')
+#post = xarray.open_dataset('analysis.nc')
+#cam_diag = xarray.open_dataset('../obs_series/obs_diag_output.nc')
+
+cam_data = xarray.open_dataset('../obs_series/obs_epoch_001.nc')
+
+#X, Y, Z = np.meshgrid(temp.c
+print(cam_data)
+
+quit()
+
+
+#cam = xarray.open_dataset('caminput.nc')
 #print(cam)
 
 combined = xarray.concat([init, post, inno], dim = 'step')
