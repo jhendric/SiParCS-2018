@@ -4,6 +4,7 @@ import cartopy.crs as ccrs
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import pandas as pd
+import math
 '''
 
 Redo of "3D_plot_initial.py" to have structuring more appropriate for
@@ -140,7 +141,14 @@ class plot_2D_obs_initial:
         #print(pd_array.index)
         #print(pd_array)
         xa_array = xa.DataArray(pd_array)
-        print(xa_array.where(xa_array.lats > 80, drop = True).where(xa_array.lons > 10))
+        a = xa_array.where(xa_array.lats>80).values
+        print(a[0][0] is a[1][0])
+        print(a[0][0], a[1][0])
+        print(10 == True)
+        print(xa_array.where(xa_array.lats>80, drop = True).where
+        b = xa_array.where(xa_array.lats > 80, drop = True)
+        print(b.where(b.lons < 80, drop = True))
+        #print(xa_array.
         #print(self.my_obs.expand_dims('lons', self.my_lons.values))
         #print(xa_array)
         #print('at unstack')
