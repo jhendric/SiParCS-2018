@@ -142,9 +142,6 @@ class plot_2D_obs_initial:
         #print(pd_array)
         xa_array = xa.DataArray(pd_array)
         a = xa_array.where(xa_array.lats>80).values
-        print(a[0][0] is a[1][0])
-        print(a[0][0], a[1][0])
-        print(10 == True)
         print(xa_array.where(xa_array.lats>80, drop = True).where
         b = xa_array.where(xa_array.lats > 80, drop = True)
         print(b.where(b.lons < 80, drop = True))
