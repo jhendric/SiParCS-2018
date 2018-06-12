@@ -124,22 +124,29 @@ class plot_2D_obs_initial:
         #index = pd.MultiIndex.from_tuples(tuples, names = ['times', 'lons', 'lats', 'z', 'obs', 'keys'])
         #print(index)
         index = pd.DataFrame
-        pd_array = pd.DataFrame({'obs' : self.my_obs.values,
+        ''''pd_array = pd.DataFrame({'obs' : self.my_obs.values,
                                  'keys' : self.my_keys.values,
                                  'lons' : self.my_lons.values,
                                  'lats' : self.my_lats.values,
                                  'z' : self.my_z.values,
-                                 'times' : self.my_times.values})
-        pd_array.set_index(['times', 'lons', 'lats', 'z'], inplace = True)
+                                 'times' : self.my_times.values})'''
+        pd_array = pd.DataFrame({'obs' : self.my_obs.values,
+                                 'lons' : self.my_lons.values,
+                                 'lats' : self.my_lats.values})
+        #pd_array.set_index(['times', 'lons', 'lats', 'z'], inplace = True)
+        pd_array.set_index(['lons', 'lats'], inplace = True)
         pd_array.sort_index(inplace = True)
-        pd_array.reset_index()
+        #pd_array.unstack(level = -1)
         #print(pd_array.index)
         #print(pd_array)
         xa_array = xa.DataArray(pd_array)
+        print(xa_array.where(xa_array.lats > 80, drop = True).where(xa_array.lons > 10))
         #print(self.my_obs.expand_dims('lons', self.my_lons.values))
         #print(xa_array)
-        xa_array.unstack('dim_0')
-        print(xa_array)
+        #print('at unstack')
+        #xa_array.unstack('dim_0')
+        #print(xa_array)
+        #print(xa_array[0])
         print('here')
         '''xa_set = xa.Dataset({'obs' : self.my_obs,
                                  'lons' : self.my_lons,
