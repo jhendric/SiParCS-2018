@@ -72,6 +72,7 @@ class plot_2D_obs_initial:
         self.z = self.locs[:, 2]
 
         #first create a pandas DataFrame
+        
         pd_array = pd.DataFrame({'obs_types' : self.obs_types.values,
                                  'times' : self.times.values,
                                  'lons' : self.lons.values,
@@ -90,36 +91,97 @@ class plot_2D_obs_initial:
         pd_array.set_index(['obs_types', 'times', 'lons', 'lats', 'z',
                             'qc_DATA', 'qc_DART', 'vert_types'], inplace = True)
         pd_array.sort_index(inplace = True)
+        pd_array.reset_index()
 
-        test_array = np.array((self.lons.values, self.lats.values, self.z.values))
-        print(test_array.shape)
-        #print(pd_array)
+        
+        
+        ''' Function guideline for if I ever want to create a proper dimensional xarray DataArray
+        
+        test_array = np.column_stack((np.array(self.lons.values, columns = ['lons']),
+        np.array(self.lats.values, columns = ['lats']),
+        np.array(self.obs.values, columns = ['obs'])))
+        
+        def map(array):
+            keys, values = array.sort_values('lons').values.T
+            ukeys, index = np.unique(keys, True)
+            arrays = np.split(values, index[1:])
+            array2 = pd.DataFrame({'lons' : ukeys, 'obs' : [list(a) for a in arrays]})
+            return array2
+
+        def map_advanced(array):
+            return None
+        
+        
+        print(map(pd_array))
+        '''
+
+        
         #Convert to an xarray DataArray
-
         self.data = xa.DataArray(pd_array)
         print(self.data)
-        print(self.data[0][0])
+        print(self.data.values.flatten())
 
-        '''demonstration of how to properly use where
-        a = xa_array.where(xa_array.lats>80)
-        print(xa_array.where(xa_array.lats>80, drop = True))
-        b = xa_array.where(xa_array.lats > 80, drop = True)
-        print(b.where(b.lons < 80, drop = True))'''
+        #demonstration of how to properly use where
+        #a = self.data.where(self.data.lats > 80)
+        #print(self.data.where(self.data.lats > 80, drop = True))
+        #b = self.data.where(self.data.lats > 80, drop = True)
+        #print(b = b.where(b.lats < 81, drop = True))
 
         
-
-                                                     
         
-    def plot(self):
-        fig, ax = plt.subplots()
-        p = self.data.plot(ax = ax, transform = ccrs.PlateCarree(), subplot_kws = {'projection': ccrs.PlateCarree()},
-                           x = 'lons', y = 'lats')
-        ax.scatter(lons, lats, transform = ccrs.PlateCarree())
-        p.show()
+    def filter(self, conditions):
+        '''Take list of tuples of form ('category_name', min, max) and return lons, lats, and
+        observation values satisfying these conditions'''
+
+        data = self.data
+
+        cat_dict = {
+            
+            'obs_types' : data.obs_types,
+            'times' : data.times,
+            'lons' : data.lons,
+            'lats' : data.lats,
+            'z' : data.z,
+            'qc_DATA' : data.qc_DATA,
+            'qc_DART' : data.qc_DART,
+            'vert_types' : data.vert_types
+            
+        }
+        
+        for (category_name, min, max) in conditions:
+            
+            category = cat_dict[category_name]
+            
+            if min != max:
+                if min < max:
+                    data = data.where(category > min, drop = True)
+                    data = data.where(category < max, drop = True)
+                else:
+                    #for wrapping data (particularly longitude)
+                    data = xa.concat(data.where(category > min), data.where(category < max))
+            else:
+                data = data.where(category == min, drop = True)
+
+        return data
+                           
+        
+        
+    def plot(self, *args):
+        '''Each argument represents a range of values to be passed to filter. Any argument given
+        should be a tuple ('category_name', min, max) representing the desired coordinate range.
+        min and max are inclusive. List of valid arguments: obs_types, times, lons, lats, z,
+        qc_DATA, qc_DART, vert_types'''
+
+        data = self.filter(args)
+        
+        ax = plt.axes(projection = ccrs.PlateCarree())
+        ax.stock_img()
+        plt.scatter(data.lons, data.lats, c = data.qc_DART, transform = ccrs.PlateCarree())
+        plt.show()
         
 
 plotter = plot_2D_obs_initial('../obs_series/obs_epoch_001.nc')
-plotter.plot()                
+plotter.plot(('obs_types', 4, 4))                
 
 
 
