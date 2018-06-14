@@ -119,7 +119,6 @@ class plot_2D_obs_initial:
         #Convert to an xarray DataArray
         self.data = xa.DataArray(pd_array)
         print(self.data)
-        print(self.data.values.flatten())
 
         #demonstration of how to properly use where
         #a = self.data.where(self.data.lats > 80)
@@ -158,7 +157,8 @@ class plot_2D_obs_initial:
                     data = data.where(category < max, drop = True)
                 else:
                     #for wrapping data (particularly longitude)
-                    data = xa.concat(data.where(category > min), data.where(category < max))
+                    data = xa.concat([data.where(category > min, drop = True),
+                                      data.where(category < max, drop = True)], dim = 'dim_0')
             else:
                 data = data.where(category == min, drop = True)
 
@@ -176,12 +176,12 @@ class plot_2D_obs_initial:
         
         ax = plt.axes(projection = ccrs.PlateCarree())
         ax.stock_img()
-        plt.scatter(data.lons, data.lats, c = data.qc_DART, transform = ccrs.PlateCarree())
+        plt.scatter(data.lons, data.lats, c = data.qc_DART, s = 3, marker = "+", transform = ccrs.PlateCarree())
         plt.show()
         
 
 plotter = plot_2D_obs_initial('../obs_series/obs_epoch_001.nc')
-plotter.plot(('obs_types', 4, 4))                
+plotter.plot(('lons', 330, 20))                
 
 
 
