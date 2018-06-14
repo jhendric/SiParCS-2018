@@ -1,3 +1,6 @@
+#!/Users/wbd1/anaconda3/bin/python3
+
+import mkl
 import xarray as xa
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
@@ -26,6 +29,8 @@ inf is float('inf')
 class plot_2D_obs_initial:
 
     def __init__(self, file_path):
+
+        mkl.set_num_threads(128)
         
         self.dataset = xa.open_dataset(file_path)
   
@@ -153,12 +158,13 @@ class plot_2D_obs_initial:
             
             if min != max:
                 if min < max:
-                    data = data.where(category > min, drop = True)
-                    data = data.where(category < max, drop = True)
+                    data = data.where(category >= min)
+                    data = data.where(category <= max)
+                    data = data.where(np.isnan(data) != True, drop = True)
                 else:
                     #for wrapping data (particularly longitude)
-                    data = xa.concat([data.where(category > min, drop = True),
-                                      data.where(category < max, drop = True)], dim = 'dim_0')
+                    data = xa.concat([data.where(category >= min, drop = True),
+                                      data.where(category <= max, drop = True)], dim = 'dim_0')
             else:
                 data = data.where(category == min, drop = True)
 
@@ -172,17 +178,22 @@ class plot_2D_obs_initial:
         min and max are inclusive. List of valid arguments: obs_types, times, lons, lats, z,
         qc_DATA, qc_DART, vert_types'''
 
+        print('at plot')
         data = self.filter(args)
-        
+        print('at plot further')
         ax = plt.axes(projection = ccrs.PlateCarree())
         ax.stock_img()
-        plt.scatter(data.lons, data.lats, c = data.qc_DART, s = 3, marker = "+", transform = ccrs.PlateCarree())
+        ax.gridlines()
+        ax.coastlines()
+        plt.scatter(data.lons, data.lats, c = data.qc_DART, s = 100,
+                    marker = "+", transform = ccrs.PlateCarree())
+        plt.tight_layout()
         plt.show()
         
 
 plotter = plot_2D_obs_initial('../obs_series/obs_epoch_001.nc')
-plotter.plot(('lons', 330, 20))                
-
+#plotter.plot(('obs_types', 10, 20))                
+plotter.plot(('obs_types', 1, 60))                
 
 
 
