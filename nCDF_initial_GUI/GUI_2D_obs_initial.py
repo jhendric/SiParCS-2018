@@ -29,6 +29,7 @@ class GUI_2D_obs_initial:
     
     
     def __init__(self, window, grid_col, grid_row):
+        
         self.plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
@@ -54,7 +55,7 @@ class GUI_2D_obs_initial:
         
         np.set_printoptions(threshold=np.nan) #without this setting, self.levels will be incomplete
         
-        self.levels = StringVar(value = np.unique(self.plotter.z.values))
+        
 
         #GUI config
 
@@ -65,11 +66,21 @@ class GUI_2D_obs_initial:
         self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
                                 height = 10, selectmode = "extended", exportselection = False)
         self.obs_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
-        self.obs_menu.bind('<Return>', self.plot_2D)
+        self.obs_menu.bind('<Return>', self.populate_levels)
         for i in range(len(self.obs_type_names.get())):
             self.obs_menu.selection_set(i)
         self.obs_menu.event_generate('<<ListboxSelect>>')
         #print('size of obs box: ', self.obs_menu.size())
+
+        #current obs types
+        obs_indices = [val+1 for val in self.obs_menu.curselection()]
+
+        print('indices of ob types: ', obs_indices)
+        print(type(obs_indices))
+
+        
+        self.data = self.plotter.filter_disjoint(self.plotter.data, ('obs_types', obs_indices))
+        self.levels = StringVar(value = np.unique(self.data.z.values))
         
         #level selection
         self.level_frame = ttk.Frame(self.main_frame, padding = "2")
@@ -83,20 +94,29 @@ class GUI_2D_obs_initial:
         self.level_menu.event_generate('<<ListboxSelect>>')
 
         self.plot_2D
+
+    def populate_levels(self, event = None):
+        #event arg is passed by menu events
+        
+        self.level_menu.delete('0', 'end')
+
+        obs_indices = [val+1 for val in self.obs_menu.curselection()]
+
+        print('indices of ob types: ', obs_indices)
+        print(type(obs_indices))
+
+        self.data = self.plotter.filter_disjoint(self.plotter.data, ('obs_types', obs_indices))
+        
+        self.levels.set(value = np.unique(self.data.z.values))
     
     def plot_2D(self, event = None):
         #event arg is passed by menu events
         
         print(self.plotter.obs_type_dict.values())
         print('currently selected ob types: ', self.obs_menu.curselection())
-        #obs_indices = [self.plotter.obs_type_dict.get(val) for val in self.obs_menu.curselection()]
-        obs_indices = [val+1 for val in self.obs_menu.curselection()]
-        
-        #may be the wrong datatype
 
-        print('indices of ob types: ', obs_indices)
-        print(type(obs_indices))
 
+        #current levels
         level_indices = [val + 1 for val in self.level_menu.curselection()]
 
         print('indices of levels :', level_indices)
@@ -110,8 +130,10 @@ class GUI_2D_obs_initial:
         self.main_frame.grid_columnconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(1, weight = 1)
 
-        data = self.plotter.filter_disjoint(('obs_types', obs_indices), ('z', level_indices))
+        data = self.plotter.filter_disjoint(self.data, ('z', level_indices))
+                                
         print(np.unique(data.qc_DART.values))
+
         ax.stock_img()
         ax.gridlines()
         ax.coastlines()

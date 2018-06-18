@@ -174,11 +174,11 @@ class plot_2D_obs:
 
         return data
                            
-    def filter_disjoint(self, *args):
+    def filter_disjoint(self, dataset, *args):
         '''Take list of tuples of form ('category_name', [values]) and return lons, lats, and
         observation values satisfying these conditions'''
 
-        data = self.data
+        data = dataset
 
         cat_dict = {
             
