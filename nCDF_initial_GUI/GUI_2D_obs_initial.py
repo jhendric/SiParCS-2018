@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import math
 from plot_2D_obs_initial import plot_2D_obs
-
+np.set_printoptions(threshold=np.nan) #without this setting, self.levels will be incomplete
 '''
 
 Incorporates plot_2D_obs_initial.py into a GUI with slider bars
@@ -31,6 +31,12 @@ class GUI_2D_obs_initial:
     def __init__(self, window, grid_col, grid_row):
         
         self.plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
+        #print('initial test: ', np.unique(self.plotter.data.where(
+        #    self.plotter.data.obs_types == 5, drop = True).z.values))
+        #print('initial test: ')
+        #x = self.plotter.data.where(self.plotter.data.obs_types == 5, drop = True)
+        #print(x.where(abs(x.z - 460.0) < 1e-10, drop = True))
+        print(np.unique(self.plotter.data.obs_types.values))
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
@@ -47,13 +53,12 @@ class GUI_2D_obs_initial:
 
         #need: dict of obs_type names to obs_type values, list of obs_type names
 
+        #print(self.plotter.obs_type_dict)
         #print('list of keys: ', list(self.plotter.obs_type_dict.keys()))
         
         self.obs_type_names = StringVar(value = self.plotter.obs_type_dict.keys())
-
-        #print('obs_type_names: ', self.obs_type_names.get())
         
-        np.set_printoptions(threshold=np.nan) #without this setting, self.levels will be incomplete
+        #print('obs_type_names: ', self.obs_type_names.get())
         
         
 
@@ -75,8 +80,8 @@ class GUI_2D_obs_initial:
         #current obs types
         obs_indices = [val+1 for val in self.obs_menu.curselection()]
 
-        print('indices of ob types: ', obs_indices)
-        print(type(obs_indices))
+        #print('indices of ob types: ', obs_indices)
+        #print(type(obs_indices))
 
         
         self.data = self.plotter.filter_disjoint(self.plotter.data, ('obs_types', obs_indices))
@@ -97,32 +102,51 @@ class GUI_2D_obs_initial:
 
     def populate_levels(self, event = None):
         #event arg is passed by menu events
-        
+        print('populating levels')
         self.level_menu.delete('0', 'end')
 
         obs_indices = [val+1 for val in self.obs_menu.curselection()]
 
-        print('indices of ob types: ', obs_indices)
-        print(type(obs_indices))
+        print(obs_indices)
+        #print('indices of ob types: ', obs_indices)
+        #print(type(obs_indices))
 
         self.data = self.plotter.filter_disjoint(self.plotter.data, ('obs_types', obs_indices))
         
         self.levels.set(value = np.unique(self.data.z.values))
-    
+
+        if (self.level_menu.get(0) == '['):
+            self.level_menu.delete('0')
+            
+        if (self.level_menu.get(0)[0] == '['):
+            first = self.level_menu.get(0)[1:]
+            self.level_menu.delete('0')
+            self.level_menu.insert(0, first)
+            
+        if (self.level_menu.get('end')[-1] == ']'):
+            last = self.level_menu.get('end')[:-1]
+            self.level_menu.delete('end')
+            self.level_menu.insert(END, last)
+        
     def plot_2D(self, event = None):
         #event arg is passed by menu events
-        
-        print(self.plotter.obs_type_dict.values())
+        print('plotting')
+        #print(self.plotter.obs_type_dict.values())
         print('currently selected ob types: ', self.obs_menu.curselection())
 
 
         #current levels
-        level_indices = [val + 1 for val in self.level_menu.curselection()]
+        #level_indices = [val + 1 for val in self.level_menu.curselection()]
 
-        print('indices of levels :', level_indices)
-        print(type(level_indices))
+        levels = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
         
+        #print('indices of levels :', level_indices)
+        #print(type(level_indices))
+        
+        print('levels: ', levels)
 
+        print('test line: ', self.data.where(self.data.z == levels[0], drop = True))
+        
         fig = Figure(figsize = (6,4))
         ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
@@ -130,7 +154,7 @@ class GUI_2D_obs_initial:
         self.main_frame.grid_columnconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(1, weight = 1)
 
-        data = self.plotter.filter_disjoint(self.data, ('z', level_indices))
+        data = self.plotter.filter_disjoint(self.data, ('z', levels))
                                 
         print(np.unique(data.qc_DART.values))
 

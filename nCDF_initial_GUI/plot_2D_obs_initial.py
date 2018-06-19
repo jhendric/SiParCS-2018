@@ -49,12 +49,15 @@ class plot_2D_obs:
         self.obs_type_dict = dict([(type_string, index +1 )
                                    for index, type_string in enumerate(self.obs_type_strings)])
         
-        
         self.times = self.dataset['time']
         self.obs_types = self.dataset['obs_type']
         #not currently using keys but defining it here
         self.keys = self.dataset['obs_keys']
         self.vert_types = self.dataset['which_vert']
+
+
+        
+        
         '''
         MISSING MISSING DATA ACCOUNTABILITY HERE
         '''
@@ -205,12 +208,12 @@ class plot_2D_obs:
 
             
             #slower less pythonic version
-            data_building = data.where(category == values[0], drop = True)
+            data_building = data.where(abs(category - values[0]) < 1e-8, drop = True)
             i = 1
             
             while i < len(values):
                 
-                data_building = xa.concat([data_building, data.where(category == values[i], drop = True)], dim = 'dim_0')
+                data_building = xa.concat([data_building, data.where(abs(category-values[i]) < 1e-8, drop = True)], dim = 'dim_0')
                 i += 1
                 
             data = data_building 
