@@ -45,16 +45,12 @@ class plot_2D_obs:
         self.QC_strings = bytes_to_string(self, self.dataset['QCMetaData'].values)
         self.obs_types_meta_indexer = self.dataset['ObsTypes']
 
-        #map obs type strings to the obs type integers that observations actually have
-        self.obs_type_dict = dict([(type_string, index +1 )
-                                   for index, type_string in enumerate(self.obs_type_strings)])
         
         self.times = self.dataset['time']
         self.obs_types = self.dataset['obs_type']
         #not currently using keys but defining it here
         self.keys = self.dataset['obs_keys']
         self.vert_types = self.dataset['which_vert']
-
 
         
         
@@ -128,10 +124,23 @@ class plot_2D_obs:
         '''
 
         
-        #Convert to an xarray DataArray
+        #Convert to pd_array to an xarray DataArray
         self.data = xa.DataArray(pd_array)
         print(self.data)
 
+        #map obs type strings to the obs type integers that observations actually have
+        obs_type_dict = dict([(type_string, index +1 )
+                                   for index, type_string in enumerate(self.obs_type_strings)])
+
+        obs_type_inverse = dict((v, k) for k, v in obs_type_dict.items())
+
+        existing_obs = np.unique(self.data.obs_types.values)
+
+        self.obs_type_dict = dict([(obs_type_inverse[i], i)
+                                   for i in existing_obs])
+
+        print(self.obs_type_dict)
+        
         #demonstration of how to properly use where
         #a = self.data.where(self.data.lats > 80)
         #print(self.data.where(self.data.lats > 80, drop = True))
