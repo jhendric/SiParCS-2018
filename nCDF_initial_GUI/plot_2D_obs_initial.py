@@ -8,6 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import pandas as pd
 import math
+import time
 '''
 
 Redo of "3D_plot_initial.py" to have structuring more appropriate for
@@ -126,6 +127,7 @@ class plot_2D_obs:
         
         #Convert to pd_array to an xarray DataArray
         self.data = xa.DataArray(pd_array)
+        self.data = self.data.sortby(self.data.obs_types)
         print(self.data)
 
         #map obs type strings to the obs type integers that observations actually have
@@ -139,7 +141,6 @@ class plot_2D_obs:
         self.obs_type_dict = dict([(obs_type_inverse[i], i)
                                    for i in existing_obs])
 
-        print(self.obs_type_dict)
         
         #demonstration of how to properly use where
         #a = self.data.where(self.data.lats > 80)
@@ -226,7 +227,9 @@ class plot_2D_obs:
                 i += 1
                 
             data = data_building 
-        
+
+        #sort data for plotting in GUI
+        data = data.sortby(data.obs_types)
         print(data)
         return data
         

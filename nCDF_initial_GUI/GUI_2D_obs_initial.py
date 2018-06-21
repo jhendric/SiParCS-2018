@@ -126,7 +126,8 @@ class GUI_2D_obs_initial:
         self.data = self.plotter.filter_disjoint(self.plotter.data, ('obs_types', obs_indices))
         
         self.levels.set(value = np.unique(self.data.z.values))
-
+        print(np.unique(self.data.z.values).size)
+        
         if (self.level_menu.get(0) == '['):
             self.level_menu.delete('0')
             
@@ -155,9 +156,9 @@ class GUI_2D_obs_initial:
         #print('indices of levels :', level_indices)
         #print(type(level_indices))
         
-        print('levels: ', levels)
+        #print('levels: ', levels)
 
-        print('test line: ', self.data.where(self.data.z == levels[0], drop = True))
+        #print('test line: ', self.data.where(self.data.z == levels[0], drop = True))
 
         #make figure and canvas to draw on
         fig = Figure(figsize = (6,4))
@@ -167,7 +168,7 @@ class GUI_2D_obs_initial:
         self.main_frame.grid_columnconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(1, weight = 1)
 
-        #have to set up a separate toolbar frame because toolbar doesn't like grid
+        #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 3, sticky = "N, S, E, W")
@@ -175,26 +176,50 @@ class GUI_2D_obs_initial:
         ax.format_coord = lambda x, y: ''
         
         data = self.plotter.filter_disjoint(self.data, ('z', levels))
-                                
-        print(np.unique(data.qc_DART.values))
 
-        
+        #print(data.obs_types.values)
+        print(data.obs_types.values.size)
+        print(np.unique(data.qc_DART.values))
+        print(np.unique(data.obs_types.values))
+
+        #get indices where obs_types change (array is sorted in filter_disjoint)
+        indices = np.where(data.obs_types.values[:-1] != data.obs_types.values[1:])[0]        
+        indices = np.insert(indices, 0, 0)
+        indices = np.append(indices, data.obs_types.values.size)
+
         ax.stock_img()
         ax.gridlines()
         ax.coastlines()
         
         #colormap for QC values
         cmap = plt.get_cmap('gist_ncar', 9)
-        image = ax.scatter(data.lons, data.lats, c = data.qc_DART.values, cmap = cmap, vmin = 0, vmax = 9,
-                   s = 100, marker = "+", transform = ccrs.PlateCarree())
 
+        #image = ax.scatter(data.lons, data.lats, c = data.qc_DART.values, cmap = cmap, vmin = 0, vmax = 9,
+        #           s = 100, marker = "+", transform = ccrs.PlateCarree())
+
+        '''brute force solution test
+
+        for obs_type in np.unique(data.obs_types.values):
+            d = data.where(data.obs_types == obs_type)
+            ax.scatter(d.lons, d.lats, c = d.qc_DART.values, cmap = cmap, vmin = 0, vmax = 9, s = 100,
+                       marker = "+", label = obs_type, transform = ccrs.PlateCarree())'''
+
+        #plot each observation type separately
+        for i in range(indices.size - 1):
+            start = indices[i]
+            end = indices[i+1]
+            ax.scatter(data.lons[start:end], data.lats[start:end], c = data.qc_DART.values[start:end],
+                       cmap = cmap, vmin = 0, vmax = 9, s = 100,
+                       marker = "+", transform = ccrs.PlateCarree())
+
+        
         #make color bar
         sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax)
         cbar.ax.get_yaxis().labelpad = 15
         cbar.ax.set_ylabel('DART QC Value', rotation = 270)
-        
+        ax.legend()
         ax.set_aspect('auto')
         fig.tight_layout()
 
