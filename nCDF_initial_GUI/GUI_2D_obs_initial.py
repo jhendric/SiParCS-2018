@@ -211,11 +211,19 @@ class GUI_2D_obs_initial:
                        marker = "+", label = obs_type, transform = ccrs.PlateCarree())'''
 
         #plot each observation type separately to get differing edge colors and markers
+        '''
         for i in range(indices.size - 1):
             start = indices[i]
             end = indices[i+1]
             ax.scatter(data.lons[start:end], data.lats[start:end], c = data.qc_DART.values[start:end],
-                       cmap = cmap, vmin = 0, vmax = 9, s = 100, edgecolors = ecmap(1-float(i/indices.size)),
+                       cmap = cmap, vmin = 0, vmax = 9, s = 50, edgecolors = ecmap(1-float(i/indices.size)),
+                       label = self.plotter.obs_type_inverse.get(data.obs_types.values[start]),
+                       marker = self.markers[i % len(self.markers)], transform = ccrs.PlateCarree())'''
+        for i in range(indices.size - 1):
+            start = indices[i]
+            end = indices[i+1]
+            ax.scatter(data.lons[start:end], data.lats[start:end], c = ecmap(1-float(i/indices.size)),
+                       cmap = ecmap, vmin = 0, vmax = 9, s = 50, edgecolors = cmap(data.qc_DART.values),
                        label = self.plotter.obs_type_inverse.get(data.obs_types.values[start]),
                        marker = self.markers[i % len(self.markers)], transform = ccrs.PlateCarree())
 
@@ -225,7 +233,12 @@ class GUI_2D_obs_initial:
         cbar = plt.colorbar(sm, ax=ax)
         cbar.ax.get_yaxis().labelpad = 15
         cbar.ax.set_ylabel('DART QC Value', rotation = 270)
-        ax.legend(fontsize = 8, framealpha = 0.25)
+
+        #legend positioning
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        ax.legend(loc = 'center left', bbox_to_anchor = (1, 0.5),
+                  fontsize = 6, framealpha = 0.25)
         #TODO: make fill colors in legend transparent to avoid confusion
         #leg = ax.get_legend()
         #for handle in leg.legendHandles:
