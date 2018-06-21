@@ -134,11 +134,11 @@ class plot_2D_obs:
         obs_type_dict = dict([(type_string, index +1 )
                                    for index, type_string in enumerate(self.obs_type_strings)])
 
-        obs_type_inverse = dict((v, k) for k, v in obs_type_dict.items())
+        self.obs_type_inverse = dict((v, k) for k, v in obs_type_dict.items())
 
         existing_obs = np.unique(self.data.obs_types.values)
 
-        self.obs_type_dict = dict([(obs_type_inverse[i], i)
+        self.obs_type_dict = dict([(self.obs_type_inverse[i], i)
                                    for i in existing_obs])
 
         

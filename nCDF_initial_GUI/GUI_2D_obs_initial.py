@@ -109,7 +109,11 @@ class GUI_2D_obs_initial:
         self.level_menu.selection_set(1)
         self.level_menu.event_generate('<<ListboxSelect>>')
 
+        #for plotting later
+        self.markers = ['o', 'v', '^', '<', '>', '8', 's', 'p', '*', 'h',
+                           'H', 'x', 'D', 'd', '|', '_']
 
+        
     def populate_levels(self, event = None):
         #event arg is passed by menu events
         print('populating levels')
@@ -183,17 +187,19 @@ class GUI_2D_obs_initial:
         print(np.unique(data.obs_types.values))
 
         #get indices where obs_types change (array is sorted in filter_disjoint)
-        indices = np.where(data.obs_types.values[:-1] != data.obs_types.values[1:])[0]        
+        indices = np.where(data.obs_types.values[:-1] != data.obs_types.values[1:])[0]
+        indices[0:indices.size] += 1
         indices = np.insert(indices, 0, 0)
         indices = np.append(indices, data.obs_types.values.size)
-
+        print(indices)
+        
         ax.stock_img()
         ax.gridlines()
         ax.coastlines()
         
         #colormap for QC values
         cmap = plt.get_cmap('gist_ncar', 9)
-
+        ecmap = plt.get_cmap('jet', 90)
         #image = ax.scatter(data.lons, data.lats, c = data.qc_DART.values, cmap = cmap, vmin = 0, vmax = 9,
         #           s = 100, marker = "+", transform = ccrs.PlateCarree())
 
@@ -204,22 +210,26 @@ class GUI_2D_obs_initial:
             ax.scatter(d.lons, d.lats, c = d.qc_DART.values, cmap = cmap, vmin = 0, vmax = 9, s = 100,
                        marker = "+", label = obs_type, transform = ccrs.PlateCarree())'''
 
-        #plot each observation type separately
+        #plot each observation type separately to get differing edge colors and markers
         for i in range(indices.size - 1):
             start = indices[i]
             end = indices[i+1]
             ax.scatter(data.lons[start:end], data.lats[start:end], c = data.qc_DART.values[start:end],
-                       cmap = cmap, vmin = 0, vmax = 9, s = 100,
-                       marker = "+", transform = ccrs.PlateCarree())
+                       cmap = cmap, vmin = 0, vmax = 9, s = 100, edgecolors = ecmap(1-float(i/indices.size)),
+                       label = self.plotter.obs_type_inverse.get(data.obs_types.values[start]),
+                       marker = self.markers[i % len(self.markers)], transform = ccrs.PlateCarree())
 
-        
         #make color bar
         sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax)
         cbar.ax.get_yaxis().labelpad = 15
         cbar.ax.set_ylabel('DART QC Value', rotation = 270)
-        ax.legend()
+        ax.legend(fontsize = 8, framealpha = 0.25)
+        #TODO: make fill colors in legend transparent to avoid confusion
+        #leg = ax.get_legend()
+        #for handle in leg.legendHandles:
+        #    handle.set_fill_color('None')
         ax.set_aspect('auto')
         fig.tight_layout()
 
