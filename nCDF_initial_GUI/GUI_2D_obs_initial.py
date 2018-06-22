@@ -127,7 +127,7 @@ class GUI_2D_obs_initial:
         #print('indices of ob types: ', obs_indices)
         #print(type(obs_indices))
 
-        self.data = self.plotter.filter_disjoint(self.plotter.data, ('obs_types', obs_indices))
+        self.data = self.plotter.filter_test(self.plotter.data, ('obs_types', obs_indices))
         
         self.levels.set(value = np.unique(self.data.z.values))
         print(np.unique(self.data.z.values).size)
@@ -165,7 +165,7 @@ class GUI_2D_obs_initial:
         #print('test line: ', self.data.where(self.data.z == levels[0], drop = True))
 
         #make figure and canvas to draw on
-        fig = Figure(figsize = (6,4))
+        fig = Figure(figsize = (9,6))
         ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
         canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 2, sticky = "N, S, E, W")
@@ -177,9 +177,9 @@ class GUI_2D_obs_initial:
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 3, sticky = "N, S, E, W")
         #disable part of the coordinate display functionality, else everything flickers
-        ax.format_coord = lambda x, y: ''
+        #ax.format_coord = lambda x, y: ''
         
-        data = self.plotter.filter_disjoint(self.data, ('z', levels))
+        data = self.plotter.filter_test(self.data, ('z', levels))
 
         #print(data.obs_types.values)
         print(data.obs_types.values.size)
@@ -227,24 +227,27 @@ class GUI_2D_obs_initial:
                        label = self.plotter.obs_type_inverse.get(data.obs_types.values[start]),
                        marker = self.markers[i % len(self.markers)], transform = ccrs.PlateCarree())
 
-        #make color bar
-        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
-        sm._A = []
-        cbar = plt.colorbar(sm, ax=ax)
-        cbar.ax.get_yaxis().labelpad = 15
-        cbar.ax.set_ylabel('DART QC Value', rotation = 270)
-
         #legend positioning
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-        ax.legend(loc = 'center left', bbox_to_anchor = (1, 0.5),
+        ax.legend(loc = 'top left', bbox_to_anchor = (1, 1),
                   fontsize = 6, framealpha = 0.25)
+
+        #make color bar
+        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
+        sm._A = []
+        cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
+        #cbar.ax.get_xaxis().labelpad = 15
+        cbar.ax.set_xlabel('DART QC Value')
+
+        
         #TODO: make fill colors in legend transparent to avoid confusion
         #leg = ax.get_legend()
         #for handle in leg.legendHandles:
         #    handle.set_fill_color('None')
         ax.set_aspect('auto')
         fig.tight_layout()
+
 
 root = Tk()
 style = ttk.Style()

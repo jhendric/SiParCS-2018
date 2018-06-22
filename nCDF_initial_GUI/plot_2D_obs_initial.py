@@ -232,7 +232,40 @@ class plot_2D_obs:
         data = data.sortby(data.obs_types)
         print(data)
         return data
+
+    def filter_test(self, dataset, *args):
+
+        data = dataset
+
+        cat_dict = {
+            
+            'obs_types' : data.obs_types,
+            'times' : data.times,
+            'lons' : data.lons,
+            'lats' : data.lats,
+            'z' : data.z,
+            'qc_DATA' : data.qc_DATA,
+            'qc_DART' : data.qc_DART,
+            'vert_types' : data.vert_types
+            
+        }
+
+        data_building = data
         
+        for (category_name, values) in args:
+            
+            category = cat_dict[category_name]
+
+            mask = np.isin(category.values, values)
+
+            data = data[mask]
+
+        #sort data for plotting in GUI
+        data = data.sortby(data.obs_types)
+        print(data)
+        return data
+
+    
     def plot(self, *args):
         '''Each argument represents a range of values to be passed to filter. Any argument given
         should be a tuple ('category_name', min, max) representing the desired coordinate range.
