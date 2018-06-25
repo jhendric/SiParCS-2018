@@ -76,8 +76,8 @@ class GUI_2D_obs_initial:
         self.obs_frame.grid(column = 2, row = 1, sticky = "N, S, E, W")
         ttk.Label(self.obs_frame, text = "Observation Type Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
-                                height = 10, selectmode = "extended", exportselection = False)
-        self.obs_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
+                                height = 18, selectmode = "extended", exportselection = False)
+        self.obs_menu.grid(column = 1, row = 2, rowspan = 2, sticky = "N, S, E, W")
         self.obs_menu.bind('<Return>', self.populate_levels)
         for i in range(len(self.obs_type_names.get())):
             self.obs_menu.selection_set(i)
@@ -87,6 +87,11 @@ class GUI_2D_obs_initial:
         #current obs types
         obs_indices = [val+1 for val in self.obs_menu.curselection()]
 
+        #obs scrollbar
+        self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
+        self.obs_menu.configure(yscrollcommand = self.obs_bar.set)
+        self.obs_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, E")
+        
         #print('indices of ob types: ', obs_indices)
         #print(type(obs_indices))
 
@@ -102,12 +107,16 @@ class GUI_2D_obs_initial:
         ttk.Label(self.level_frame, text = "Observation Level Selection").grid(column = 1,
                                                                                row = 1, sticky = "E, W")
         self.level_menu = Listbox(self.level_frame, listvariable = self.levels,
-                                  height = 10, selectmode = "extended", exportselection = False)
+                                  height = 18, selectmode = "extended", exportselection = False)
         self.level_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
 
         self.level_menu.bind('<Return>', self.populate_qc)
 
-
+        #level scrollbar
+        self.level_bar = ttk.Scrollbar(self.level_frame, orient = VERTICAL, command = self.level_menu.yview)
+        self.level_menu.configure(yscrollcommand = self.level_bar.set)
+        self.level_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, E")
+        
         self.qc = StringVar()
         #qc selection
         self.qc_frame = ttk.Frame(self.main_frame, padding = "2")
@@ -131,6 +140,12 @@ class GUI_2D_obs_initial:
             self.qc_menu.selection_set(i)
         self.qc_menu.event_generate('<<ListboxSelect>>')
 
+        '''
+        #qc scrollbar - not enough values to need this right now
+        self.qc_bar = ttk.Scrollbar(self.qc_frame, orient = VERTICAL, command = self.qc_menu.yview)
+        self.qc_menu.configure(yscrollcommand = self.qc_bar.set)
+        self.qc_bar.grid(column = 2, row = 2, rowspan = 2, sticky ="N, S, E")
+        '''
         
         
         #for plotting later
@@ -140,6 +155,8 @@ class GUI_2D_obs_initial:
         #these markers do not seem to have border color capabilities
         #'x', '_', '|'
 
+        s = ttk.Style()
+        s.theme_use('clam')
         
     def populate_levels(self, event = None):
         #event arg is passed by menu events
@@ -230,7 +247,7 @@ class GUI_2D_obs_initial:
         #print('test line: ', self.data.where(self.data.z == levels[0], drop = True))
 
         #make figure and canvas to draw on
-        fig = Figure(figsize = (9,6))
+        fig = Figure(figsize = (12,8))
         ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
         canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
@@ -296,7 +313,7 @@ class GUI_2D_obs_initial:
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
         ax.legend(loc = 'top right', bbox_to_anchor = (1, 1),
-                  fontsize = 6, framealpha = 0.25)
+                  fontsize = 8, framealpha = 0.25)
 
         #make color bar
         sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
@@ -314,10 +331,15 @@ class GUI_2D_obs_initial:
         #fig.tight_layout()
         print(time.time()-a)
 
-root = Tk()
-style = ttk.Style()
-#style.theme_use('classic')
+        s= ttk.Style()
+        s.theme_use('clam')
+        
+root = Tk()       
 widg = GUI_2D_obs_initial(root, 0, 0)
 widg.plot_2D()
 print('on to mainloop')
+root.style = ttk.Style()
+print(root.style.theme_use())
+root.style.theme_use('clam')
+print(root.style.theme_use())
 root.mainloop()
