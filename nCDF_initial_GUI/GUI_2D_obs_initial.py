@@ -55,14 +55,18 @@ class GUI_2D_obs_initial:
 
         #obs parameter variables
 
-        #need: dict of obs_type names to obs_type values, list of obs_type names
-
-
-        #strip useless characters from string interpretation of obs types
-        self.obs_type_names = StringVar(value = [x.replace('[', '').replace(']', '').
-                                                 replace(',', '').replace('\'', '').
-                                                 replace('dict_keys(', '')
-                                                 for x in self.plotter.obs_type_dict.keys()])
+        #get counts for each obs_type
+        unique, counts = np.unique(self.plotter.data.obs_types.values, return_counts = True)
+        count_dict = dict(zip(unique, counts))
+        
+        #strip useless characters from string interpretation of obs types, and add counts
+        obs_type_dict_sparse = [x.replace('[', '').replace(']', '').
+                                replace(',', '').replace('\'', '').
+                                replace('dict_keys(', '')
+                                for x in self.plotter.obs_type_dict.keys()]
+        
+        self.obs_type_names = StringVar(value = [str(count_dict[self.plotter.obs_type_dict[x]]) +
+                                                 " : " + x for x in obs_type_dict_sparse])
                                                  
         
         #self.obs_type_names = StringVar(value = self.plotter.obs_type_dict.keys())
@@ -179,7 +183,8 @@ class GUI_2D_obs_initial:
         self.qc_menu.delete('0', 'end')
 
         #get indices of currently selected observation types
-        obs_indices = [self.plotter.obs_type_dict[self.obs_menu.get(val)]
+        
+        obs_indices = [self.plotter.obs_type_dict[self.obs_menu.get(val).split(" : ", 1)[1]]
                        for val in self.obs_menu.curselection()]
 
         print(obs_indices)
