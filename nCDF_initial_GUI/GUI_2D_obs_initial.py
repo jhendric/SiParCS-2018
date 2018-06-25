@@ -85,7 +85,7 @@ class GUI_2D_obs_initial:
         #print('size of obs box: ', self.obs_menu.size())
 
         #current obs types
-        obs_indices = [val+1 for val in self.obs_menu.curselection()]
+        #obs_indices = [val+1 for val in self.obs_menu.curselection()]
 
         #obs scrollbar
         self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
@@ -123,7 +123,7 @@ class GUI_2D_obs_initial:
         self.qc_frame.grid(column=2, row = 3, sticky = "N, S, E, W")
         ttk.Label(self.qc_frame, text = "DART QC Value Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.qc_menu = Listbox(self.qc_frame, listvariable = self.qc,
-                               height = 8, selectmode = "extended", exportselection = False)
+                               height = 8, width = 22, selectmode = "extended", exportselection = False)
         self.qc_menu.grid(column = 1, row = 2, sticky ="N, S, E, W")
 
         #populate levels
@@ -132,6 +132,16 @@ class GUI_2D_obs_initial:
         self.level_menu.event_generate('<<ListboxSelect>>')
 
         #populate qc
+        self.qc_key = {0 : '0 - Assimilated O.K.',
+                       1 : '1 - Evaulated O.K., not assimilated because namelist specified evaluate only',
+                       2 : '2 - Assimilated, but posterior forward operator failed',
+                       3 : '3 - Evaluated, but posterior forward operator failed',
+                       4 : '4 - Prior forward operator failed',
+                       5 : '5 - Not used because of namelist control',
+                       6 : '6 - Rejected because incoming data QC higher than namelist control',
+                       7 : '7 - Rejected because of outlier threshold test',
+                       8 : 'TODO'}
+        
         self.populate_qc()
 
         #current plotting occurs only with press of enter from qc menu
@@ -140,12 +150,12 @@ class GUI_2D_obs_initial:
             self.qc_menu.selection_set(i)
         self.qc_menu.event_generate('<<ListboxSelect>>')
 
-        '''
-        #qc scrollbar - not enough values to need this right now
-        self.qc_bar = ttk.Scrollbar(self.qc_frame, orient = VERTICAL, command = self.qc_menu.yview)
-        self.qc_menu.configure(yscrollcommand = self.qc_bar.set)
-        self.qc_bar.grid(column = 2, row = 2, rowspan = 2, sticky ="N, S, E")
-        '''
+        
+        #qc scrollbar
+        self.qc_bar = ttk.Scrollbar(self.qc_frame, orient = HORIZONTAL, command = self.qc_menu.xview)
+        self.qc_menu.configure(xscrollcommand = self.qc_bar.set)
+        self.qc_bar.grid(column = 1, row = 3, rowspan = 1, sticky ="N, S, E, W")
+        
         
         
         #for plotting later
@@ -208,7 +218,7 @@ class GUI_2D_obs_initial:
 
         self.data = self.plotter.filter_test(self.data_from_types, ('z', levels))
         
-        self.qc.set(value = np.unique(self.data.qc_DART.values))
+        self.qc.set(value = [self.qc_key[val] for val in np.unique(self.data.qc_DART.values)])
         print(np.unique(self.data.qc_DART.values).size)
         
         if (self.qc_menu.get(0) == '['):
@@ -237,7 +247,7 @@ class GUI_2D_obs_initial:
 
         #levels = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
 
-        qc = [np.int64(self.qc_menu.get(val)) for val in self.qc_menu.curselection()]
+        qc = [np.int64(self.qc_menu.get(val)[0]) for val in self.qc_menu.curselection()]
         
         #print('indices of levels :', level_indices)
         #print(type(level_indices))
@@ -312,7 +322,7 @@ class GUI_2D_obs_initial:
         #legend positioning
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-        ax.legend(loc = 'top right', bbox_to_anchor = (1, 1),
+        ax.legend( bbox_to_anchor = (1, 1),
                   fontsize = 8, framealpha = 0.25)
 
         #make color bar
