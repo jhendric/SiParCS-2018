@@ -40,7 +40,7 @@ class GUI_2D_obs_initial:
         #print('initial test: ')
         #x = self.plotter.data.where(self.plotter.data.obs_types == 5, drop = True)
         #print(x.where(abs(x.z - 460.0) < 1e-10, drop = True))
-        print(np.unique(self.plotter.data.obs_types.values))
+        print(np.unique(self.plotter.obs_types.values).size)
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
@@ -76,7 +76,7 @@ class GUI_2D_obs_initial:
         self.obs_frame.grid(column = 2, row = 1, sticky = "N, S, E, W")
         ttk.Label(self.obs_frame, text = "Observation Type Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
-                                height = 18, selectmode = "extended", exportselection = False)
+                                height = 18, width = 40, selectmode = "extended", exportselection = False)
         self.obs_menu.grid(column = 1, row = 2, rowspan = 2, sticky = "N, S, E, W")
         self.obs_menu.bind('<Return>', self.populate_levels)
         for i in range(len(self.obs_type_names.get())):
@@ -102,12 +102,13 @@ class GUI_2D_obs_initial:
         self.levels = StringVar()
         
         #level selection
+        
         self.level_frame = ttk.Frame(self.main_frame, padding = "2")
         self.level_frame.grid(column = 2, row = 2, sticky = "N, S, E, W")
         ttk.Label(self.level_frame, text = "Observation Level Selection").grid(column = 1,
                                                                                row = 1, sticky = "E, W")
         self.level_menu = Listbox(self.level_frame, listvariable = self.levels,
-                                  height = 18, selectmode = "extended", exportselection = False)
+                                  height = 18, width = 40, selectmode = "extended", exportselection = False)
         self.level_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
 
         self.level_menu.bind('<Return>', self.populate_qc)
@@ -118,15 +119,18 @@ class GUI_2D_obs_initial:
         self.level_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, E")
         
         self.qc = StringVar()
+        
         #qc selection
+        
         self.qc_frame = ttk.Frame(self.main_frame, padding = "2")
         self.qc_frame.grid(column=2, row = 3, sticky = "N, S, E, W")
         ttk.Label(self.qc_frame, text = "DART QC Value Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.qc_menu = Listbox(self.qc_frame, listvariable = self.qc,
-                               height = 8, width = 22, selectmode = "extended", exportselection = False)
+                               height = 8, width = 40, selectmode = "extended", exportselection = False)
         self.qc_menu.grid(column = 1, row = 2, sticky ="N, S, E, W")
 
         #populate levels
+        
         self.populate_levels()
         self.level_menu.selection_set(1)
         self.level_menu.event_generate('<<ListboxSelect>>')
@@ -217,8 +221,14 @@ class GUI_2D_obs_initial:
         #print(type(obs_indices))
 
         self.data = self.plotter.filter_test(self.data_from_types, ('z', levels))
-        
-        self.qc.set(value = [self.qc_key[val] for val in np.unique(self.data.qc_DART.values)])
+
+        #get counts for each existing QC value
+        unique, counts = np.unique(self.data.qc_DART.values, return_counts = True)
+        count_dict = dict(zip(unique, counts))
+        print(count_dict)
+
+        #set qc menu values
+        self.qc.set(value = [str(count_dict[val]) + " : " + str(self.qc_key[val]) for val in unique])
         print(np.unique(self.data.qc_DART.values).size)
         
         if (self.qc_menu.get(0) == '['):
@@ -246,9 +256,10 @@ class GUI_2D_obs_initial:
         #level_indices = [val + 1 for val in self.level_menu.curselection()]
 
         #levels = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
+        #print([self.qc_menu.get(val).split(":", 1) for val in self.qc_menu.curselection()])
+        qc = [np.int64(self.qc_menu.get(val).split(": ", 1)[1][0]) for val in self.qc_menu.curselection()]
 
-        qc = [np.int64(self.qc_menu.get(val)[0]) for val in self.qc_menu.curselection()]
-        
+        print(qc)
         #print('indices of levels :', level_indices)
         #print(type(level_indices))
         
@@ -323,7 +334,7 @@ class GUI_2D_obs_initial:
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
         ax.legend( bbox_to_anchor = (1, 1),
-                  fontsize = 8, framealpha = 0.25)
+                  fontsize = 7, framealpha = 0.25)
 
         #make color bar
         sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
