@@ -257,7 +257,11 @@ class plot_2D_obs:
             category = cat_dict[category_name]
 
             mask = np.isin(category.values, values)
+            
+            #rounding to prevent float comparison mistakes
+            mask = np.isin(np.around(category.values, 1), np.around(values, 1))
 
+            #index data using mask to get needed values
             data = data[mask]
 
         #sort data for plotting in GUI

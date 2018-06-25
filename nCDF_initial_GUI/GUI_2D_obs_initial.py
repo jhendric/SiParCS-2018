@@ -18,6 +18,7 @@ import pandas as pd
 import math
 from plot_2D_obs_initial import plot_2D_obs
 np.set_printoptions(threshold=np.nan) #without this setting, self.levels will be incomplete
+import time
 '''
 
 Incorporates plot_2D_obs_initial.py into a GUI with slider bars
@@ -98,26 +99,53 @@ class GUI_2D_obs_initial:
         #level selection
         self.level_frame = ttk.Frame(self.main_frame, padding = "2")
         self.level_frame.grid(column = 2, row = 2, sticky = "N, S, E, W")
-        ttk.Label(self.level_frame, text = "Observation Level Selection").grid(column = 1, row = 1, sticky = "E, W")
+        ttk.Label(self.level_frame, text = "Observation Level Selection").grid(column = 1,
+                                                                               row = 1, sticky = "E, W")
         self.level_menu = Listbox(self.level_frame, listvariable = self.levels,
                                   height = 10, selectmode = "extended", exportselection = False)
         self.level_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
-        
+
+        self.level_menu.bind('<Return>', self.populate_qc)
+
+
+        self.qc = StringVar()
+        #qc selection
+        self.qc_frame = ttk.Frame(self.main_frame, padding = "2")
+        self.qc_frame.grid(column=2, row = 3, sticky = "N, S, E, W")
+        ttk.Label(self.qc_frame, text = "DART QC Value Selection").grid(column = 1, row = 1, sticky = "E, W")
+        self.qc_menu = Listbox(self.qc_frame, listvariable = self.qc,
+                               height = 8, selectmode = "extended", exportselection = False)
+        self.qc_menu.grid(column = 1, row = 2, sticky ="N, S, E, W")
+
+        #populate levels
         self.populate_levels()
-        #current plotting occurs only with press of enter from level menu
-        self.level_menu.bind('<Return>', self.plot_2D)
         self.level_menu.selection_set(1)
         self.level_menu.event_generate('<<ListboxSelect>>')
 
+        #populate qc
+        self.populate_qc()
+
+        #current plotting occurs only with press of enter from qc menu
+        self.qc_menu.bind('<Return>', self.plot_2D)
+        for i in range(len(self.qc.get())):
+            self.qc_menu.selection_set(i)
+        self.qc_menu.event_generate('<<ListboxSelect>>')
+
+        
+        
         #for plotting later
-        self.markers = ['o', 'v', '^', '<', '>', '8', 's', 'p', '*', 'h',
-                           'H', 'x', 'D', 'd', '|', '_']
+        self.markers = ['o', 'v', 'H', 'D', '^', '<', '8',
+                        's', 'p', '>',  '*', 'h', 'd']
+
+        #these markers do not seem to have border color capabilities
+        #'x', '_', '|'
 
         
     def populate_levels(self, event = None):
         #event arg is passed by menu events
         print('populating levels')
         self.level_menu.delete('0', 'end')
+        self.qc_menu.delete('0', 'end')
 
         #get indices of currently selected observation types
         obs_indices = [self.plotter.obs_type_dict[self.obs_menu.get(val)]
@@ -127,10 +155,10 @@ class GUI_2D_obs_initial:
         #print('indices of ob types: ', obs_indices)
         #print(type(obs_indices))
 
-        self.data = self.plotter.filter_test(self.plotter.data, ('obs_types', obs_indices))
+        self.data_from_types = self.plotter.filter_test(self.plotter.data, ('obs_types', obs_indices))
         
-        self.levels.set(value = np.unique(self.data.z.values))
-        print(np.unique(self.data.z.values).size)
+        self.levels.set(value = np.unique(self.data_from_types.z.values))
+        print(np.unique(self.data_from_types.z.values).size)
         
         if (self.level_menu.get(0) == '['):
             self.level_menu.delete('0')
@@ -144,8 +172,43 @@ class GUI_2D_obs_initial:
             last = self.level_menu.get('end')[:-1]
             self.level_menu.delete('end')
             self.level_menu.insert(END, last)
+
+    def populate_qc(self, event = None):
+        #This is pretty much redundant with populate_levels, but need to find a way to
+        #merge them given the restrictions of binding functions (don't seem to be able
+        #to pass parameters)
+
+        #event arg is passed by menu events
+        print('populating levels')
+        self.qc_menu.delete('0', 'end')
+
+        #get indices of currently selected observation types
+        levels = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
         
+        print(levels)
+        #print('indices of ob types: ', obs_indices)
+        #print(type(obs_indices))
+
+        self.data = self.plotter.filter_test(self.data_from_types, ('z', levels))
+        
+        self.qc.set(value = np.unique(self.data.qc_DART.values))
+        print(np.unique(self.data.qc_DART.values).size)
+        
+        if (self.qc_menu.get(0) == '['):
+            self.qc_menu.delete('0')
+            
+        if (self.qc_menu.get(0)[0] == '['):
+            first = self.qc_menu.get(0)[1:]
+            self.qc_menu.delete('0')
+            self.qc_menu.insert(0, first)
+            
+        if (self.qc_menu.get('end')[-1] == ']'):
+            last = self.qc_menu.get('end')[:-1]
+            self.qc_menu.delete('end')
+            self.qc_menu.insert(END, last)
+
     def plot_2D(self, event = None):
+        a = time.time()
         #event arg is passed by menu events
         print('plotting')
         #print(self.plotter.obs_type_dict.values())
@@ -155,7 +218,9 @@ class GUI_2D_obs_initial:
         #current levels
         #level_indices = [val + 1 for val in self.level_menu.curselection()]
 
-        levels = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
+        #levels = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
+
+        qc = [np.int64(self.qc_menu.get(val)) for val in self.qc_menu.curselection()]
         
         #print('indices of levels :', level_indices)
         #print(type(level_indices))
@@ -168,19 +233,19 @@ class GUI_2D_obs_initial:
         fig = Figure(figsize = (9,6))
         ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
-        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 2, sticky = "N, S, E, W")
+        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
         self.main_frame.grid_columnconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(1, weight = 1)
 
         #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
-        self.toolbar_frame.grid(column = 1, row = 3, sticky = "N, S, E, W")
+        self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
         #disable part of the coordinate display functionality, else everything flickers
         #ax.format_coord = lambda x, y: ''
         
-        data = self.plotter.filter_test(self.data, ('z', levels))
-
+        data = self.plotter.filter_test(self.data, ('qc_DART', qc))
+        
         #print(data.obs_types.values)
         print(data.obs_types.values.size)
         print(np.unique(data.qc_DART.values))
@@ -230,7 +295,7 @@ class GUI_2D_obs_initial:
         #legend positioning
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-        ax.legend(loc = 'top left', bbox_to_anchor = (1, 1),
+        ax.legend(loc = 'top right', bbox_to_anchor = (1, 1),
                   fontsize = 6, framealpha = 0.25)
 
         #make color bar
@@ -246,8 +311,8 @@ class GUI_2D_obs_initial:
         #for handle in leg.legendHandles:
         #    handle.set_fill_color('None')
         ax.set_aspect('auto')
-        fig.tight_layout()
-
+        #fig.tight_layout()
+        print(time.time()-a)
 
 root = Tk()
 style = ttk.Style()
