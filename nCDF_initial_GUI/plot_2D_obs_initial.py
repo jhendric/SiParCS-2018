@@ -179,7 +179,7 @@ class plot_2D_obs:
                     data = data.where(category <= max)
                     data = data.where(np.isnan(data) != True, drop = True)
                 else:
-                    #for wrapping data (particularly longitude)
+                    #for wrapping data (particularly longitudes or times)
                     data = xa.concat([data.where(category >= min, drop = True),
                                       data.where(category <= max, drop = True)], dim = 'dim_0')
             else:

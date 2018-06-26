@@ -35,6 +35,7 @@ class GUI_2D_obs_initial:
     def __init__(self, window, grid_col, grid_row):
         
         self.plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
+        self.original_data = self.plotter.data
         #print('initial test: ', np.unique(self.plotter.data.where(
         #    self.plotter.data.obs_types == 5, drop = True).z.values))
         #print('initial test: ')
@@ -82,7 +83,10 @@ class GUI_2D_obs_initial:
         self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
                                 height = 18, width = 40, selectmode = "extended", exportselection = False)
         self.obs_menu.grid(column = 1, row = 2, rowspan = 2, sticky = "N, S, E, W")
-        self.obs_menu.bind('<Return>', self.populate_levels)
+        
+        #self.obs_menu.bind('<Return>', self.populate_levels)
+        self.obs_menu.bind('<Return>', lambda event : self.populate('levels', self.level_menu, event))
+        
         for i in range(len(self.obs_type_names.get())):
             self.obs_menu.selection_set(i)
         self.obs_menu.event_generate('<<ListboxSelect>>')
@@ -115,8 +119,9 @@ class GUI_2D_obs_initial:
                                   height = 18, width = 40, selectmode = "extended", exportselection = False)
         self.level_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
 
-        self.level_menu.bind('<Return>', self.populate_qc)
-
+        #self.level_menu.bind('<Return>', self.populate_qc)
+        self.level_menu.bind('<Return>', lambda event : self.populate('qc', self.qc_menu, event))
+        
         #level scrollbar
         self.level_bar = ttk.Scrollbar(self.level_frame, orient = VERTICAL, command = self.level_menu.yview)
         self.level_menu.configure(yscrollcommand = self.level_bar.set)
@@ -133,9 +138,26 @@ class GUI_2D_obs_initial:
                                height = 8, width = 40, selectmode = "extended", exportselection = False)
         self.qc_menu.grid(column = 1, row = 2, sticky ="N, S, E, W")
 
+        #for use in populating and clearing menus (in populate function)
+        self.data_obs_types = 1
+        self.data_levels = 2
+        self.data_qc = 3
+        '''self.data_dict = {
+            'obs_types' : self.data_obs_types,
+            'levels' : self.data_levels,
+            'qc' : self.data_qc
+        }'''
+        self.data_request_dict = {
+            'data_levels' : 'obs_types',
+            'data_qc' : 'z'
+        }
+        self.menu_hierarchy = [self.obs_menu, self.level_menu, self.qc_menu]
+        #self.data_hierarchy = [self.plotter.data, self.data_obs_types, self.data_levels, self.data_qc]
+        self.data_hierarchy = ['original_data', 'data_levels', 'data_qc']
+        
         #populate levels
         
-        self.populate_levels()
+        self.populate('levels', self.level_menu)
         self.level_menu.selection_set(1)
         self.level_menu.event_generate('<<ListboxSelect>>')
 
@@ -150,7 +172,7 @@ class GUI_2D_obs_initial:
                        7 : '7 - Rejected because of outlier threshold test',
                        8 : 'TODO'}
         
-        self.populate_qc()
+        self.populate('qc', self.qc_menu)
 
         #current plotting occurs only with press of enter from qc menu
         self.qc_menu.bind('<Return>', self.plot_2D)
@@ -165,7 +187,6 @@ class GUI_2D_obs_initial:
         self.qc_bar.grid(column = 1, row = 3, rowspan = 1, sticky ="N, S, E, W")
         
         
-        
         #for plotting later
         self.markers = ['o', 'v', 'H', 'D', '^', '<', '8',
                         's', 'p', '>',  '*', 'h', 'd']
@@ -175,80 +196,58 @@ class GUI_2D_obs_initial:
 
         s = ttk.Style()
         s.theme_use('clam')
-        
-    def populate_levels(self, event = None):
-        #event arg is passed by menu events
-        print('populating levels')
-        self.level_menu.delete('0', 'end')
-        self.qc_menu.delete('0', 'end')
 
-        #get indices of currently selected observation types
+    def populate(self, variable, menu, event = None):
+        #event arg is passed by menu events, variable is the data variable to be manipulated, menu is the menu to change
+        print('populating ' + variable)
+        #clear lower level menus
+        for i in range(self.menu_hierarchy.index(menu), len(self.menu_hierarchy)):
+            self.menu_hierarchy[i].delete('0', 'end')
+
+        #get currently selected values
         
-        obs_indices = [self.plotter.obs_type_dict[self.obs_menu.get(val).split(" : ", 1)[1]]
+        indices = None
+
+        var = 'data_' + variable
+        
+        if var == 'data_levels':
+            indices = [self.plotter.obs_type_dict[self.obs_menu.get(val).split(" : ", 1)[1]]
                        for val in self.obs_menu.curselection()]
 
-        print(obs_indices)
-        #print('indices of ob types: ', obs_indices)
-        #print(type(obs_indices))
+        elif var == 'data_qc':
 
-        self.data_from_types = self.plotter.filter_test(self.plotter.data, ('obs_types', obs_indices))
-        
-        self.levels.set(value = np.unique(self.data_from_types.z.values))
-        print(np.unique(self.data_from_types.z.values).size)
-        
-        if (self.level_menu.get(0) == '['):
-            self.level_menu.delete('0')
+            indices = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
+
+        #retrieve relevant data for this level of the hierarchy
+        setattr(self, var,
+                self.plotter.filter_test(getattr(self, self.data_hierarchy[self.data_hierarchy[1:].index(var)]),
+                                         (self.data_request_dict[var], indices)))
+
+        #set corresponding menu variables
+        if var == 'data_levels':
+            self.levels.set(value = np.unique(getattr(self, var).z.values))
+
+        elif variable == 'qc':
+            unique, counts = np.unique(getattr(self, var).qc_DART.values, return_counts = True)
+            count_dict = dict(zip(unique, counts))
+            print(count_dict)
+            self.qc.set(value = [str(count_dict[val]) + " : " + str(self.qc_key[val]) for val in unique])
+            print(np.unique(getattr(self, var).qc_DART.values).size)
             
-        if (self.level_menu.get(0)[0] == '['):
-            first = self.level_menu.get(0)[1:]
-            self.level_menu.delete('0')
-            self.level_menu.insert(0, first)
+        #should work in class scope since menu is a self variable
+        if (menu.get(0) == '['):
+            menu.delete('0')
             
-        if (self.level_menu.get('end')[-1] == ']'):
-            last = self.level_menu.get('end')[:-1]
-            self.level_menu.delete('end')
-            self.level_menu.insert(END, last)
-
-    def populate_qc(self, event = None):
-        #This is pretty much redundant with populate_levels, but need to find a way to
-        #merge them given the restrictions of binding functions (don't seem to be able
-        #to pass parameters)
-
-        #event arg is passed by menu events
-        print('populating levels')
-        self.qc_menu.delete('0', 'end')
-
-        #get indices of currently selected observation types
-        levels = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
+        if (menu.get(0)[0] == '['):
+            first = menu.get(0)[1:]
+            menu.delete('0')
+            menu.insert(0, first)
+            
+        if (menu.get('end')[-1] == ']'):
+            last = menu.get('end')[:-1]
+            menu.delete('end')
+            menu.insert(END, last)    
         
-        print(levels)
-        #print('indices of ob types: ', obs_indices)
-        #print(type(obs_indices))
-
-        self.data = self.plotter.filter_test(self.data_from_types, ('z', levels))
-
-        #get counts for each existing QC value
-        unique, counts = np.unique(self.data.qc_DART.values, return_counts = True)
-        count_dict = dict(zip(unique, counts))
-        print(count_dict)
-
-        #set qc menu values
-        self.qc.set(value = [str(count_dict[val]) + " : " + str(self.qc_key[val]) for val in unique])
-        print(np.unique(self.data.qc_DART.values).size)
-        
-        if (self.qc_menu.get(0) == '['):
-            self.qc_menu.delete('0')
-            
-        if (self.qc_menu.get(0)[0] == '['):
-            first = self.qc_menu.get(0)[1:]
-            self.qc_menu.delete('0')
-            self.qc_menu.insert(0, first)
-            
-        if (self.qc_menu.get('end')[-1] == ']'):
-            last = self.qc_menu.get('end')[:-1]
-            self.qc_menu.delete('end')
-            self.qc_menu.insert(END, last)
-
     def plot_2D(self, event = None):
         a = time.time()
         #event arg is passed by menu events
@@ -287,7 +286,7 @@ class GUI_2D_obs_initial:
         #disable part of the coordinate display functionality, else everything flickers
         #ax.format_coord = lambda x, y: ''
         
-        data = self.plotter.filter_test(self.data, ('qc_DART', qc))
+        data = self.plotter.filter_test(self.data_qc, ('qc_DART', qc))
         
         #print(data.obs_types.values)
         print(data.obs_types.values.size)
