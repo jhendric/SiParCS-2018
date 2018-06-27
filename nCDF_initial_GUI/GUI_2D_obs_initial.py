@@ -197,9 +197,9 @@ class GUI_2D_obs_initial:
         s = ttk.Style()
         s.theme_use('clam')
 
-    def populate(self, variable, menu, event = None):
+    def populate(self, variable_name, menu, event = None):
         #event arg is passed by menu events, variable is the data variable to be manipulated, menu is the menu to change
-        print('populating ' + variable)
+        print('populating ' + variable_name)
         #clear lower level menus
         for i in range(self.menu_hierarchy.index(menu), len(self.menu_hierarchy)):
             self.menu_hierarchy[i].delete('0', 'end')
@@ -208,7 +208,8 @@ class GUI_2D_obs_initial:
         
         indices = None
 
-        var = 'data_' + variable
+        #used to dynamically access object variables
+        var = 'data_' + variable_name
         
         if var == 'data_levels':
             indices = [self.plotter.obs_type_dict[self.obs_menu.get(val).split(" : ", 1)[1]]
@@ -227,7 +228,7 @@ class GUI_2D_obs_initial:
         if var == 'data_levels':
             self.levels.set(value = np.unique(getattr(self, var).z.values))
 
-        elif variable == 'qc':
+        elif var == 'data_qc':
             unique, counts = np.unique(getattr(self, var).qc_DART.values, return_counts = True)
             count_dict = dict(zip(unique, counts))
             print(count_dict)
