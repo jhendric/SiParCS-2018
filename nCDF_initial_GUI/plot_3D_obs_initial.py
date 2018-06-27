@@ -66,7 +66,7 @@ ax.add_collection3d(lc)
 #print(plotter.data.lons[1:10000].values)
 
 ax.scatter(lons, lats,
-           plotter.data.z[1:1000], c = "green")
+           plotter.data.z[1:1000], c = plotter.data.qc_DART[1:1000], cmap = plt.get_cmap('gist_ncar', 9))
 #ax.scatter(X, Y, Z, transform = ccrs.PlateCarree())
 
 ax.set_xlabel('lon')
