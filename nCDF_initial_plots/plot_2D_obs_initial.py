@@ -26,7 +26,7 @@ inf is float('inf')
 
 '''
 
-class plot_2D_obs_initial:
+class plot_2D_obs:
 
     def __init__(self, file_path):
 
@@ -45,6 +45,10 @@ class plot_2D_obs_initial:
         self.QC_strings = bytes_to_string(self, self.dataset['QCMetaData'].values)
         self.obs_types_meta_indexer = self.dataset['ObsTypes']
 
+        #map obs type strings to the obs type integers that observations actually have
+        self.obs_type_dict = dict([(type_string, index +1 )
+                                   for index, type_string in enumerate(self.obs_type_strings)])
+        
         
         self.times = self.dataset['time']
         self.obs_types = self.dataset['obs_type']
@@ -133,7 +137,7 @@ class plot_2D_obs_initial:
 
         
         
-    def filter(self, conditions):
+    def filter_range(self, conditions):
         '''Take list of tuples of form ('category_name', min, max) and return lons, lats, and
         observation values satisfying these conditions'''
 
@@ -170,7 +174,49 @@ class plot_2D_obs_initial:
 
         return data
                            
+    def filter_disjoint(self, conditions):
+        '''Take list of tuples of form ('category_name', [values]) and return lons, lats, and
+        observation values satisfying these conditions'''
+
+        data = self.data
+
+        cat_dict = {
+            
+            'obs_types' : data.obs_types,
+            'times' : data.times,
+            'lons' : data.lons,
+            'lats' : data.lats,
+            'z' : data.z,
+            'qc_DATA' : data.qc_DATA,
+            'qc_DART' : data.qc_DART,
+            'vert_types' : data.vert_types
+            
+        }
+
+        data_building = data
         
+        for (category_name, values) in conditions:
+            
+            category = cat_dict[category_name]
+
+            #this form may not work but maybe it will
+            
+            #data = data.where(category == values[, drop = True)
+
+            
+            #slower less pythonic version
+            data_building = data_building.where(category == values[0], drop = True)
+            i = 1
+            
+            while i < len(values):
+                
+                data_building = xa.concat([data_building, data.where(category == values[i], drop = True)], dim = 'dim_0')
+                i += 1
+                
+            data = data_building 
+        
+        print(data)
+        return data
         
     def plot(self, *args):
         '''Each argument represents a range of values to be passed to filter. Any argument given
@@ -179,7 +225,7 @@ class plot_2D_obs_initial:
         qc_DATA, qc_DART, vert_types'''
 
         print('at plot')
-        data = self.filter(args)
+        data = self.filter_disjoint(args)
         print('at plot further')
         ax = plt.axes(projection = ccrs.PlateCarree())
         ax.stock_img()
@@ -190,11 +236,11 @@ class plot_2D_obs_initial:
         plt.tight_layout()
         plt.show()
         
-
-plotter = plot_2D_obs_initial('../obs_series/obs_epoch_001.nc')
+'''
+plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
 #plotter.plot(('obs_types', 10, 20))                
-plotter.plot(('obs_types', 1, 60))                
-
+plotter.plot(('obs_types', [3, 4, 5, 6, 7, 8]))                
+'''
 
 
 
