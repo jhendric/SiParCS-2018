@@ -26,12 +26,15 @@ Initial attempt at 3D plotting using cartopy.
 plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
 
 fig = plt.figure()
-ax = Axes3D(fig, xlim = [0, 360], ylim = [-90, 90], zlim = [0, 100000])
+a = ccrs.PlateCarree().transform_points(ccrs.PlateCarree(), plotter.data.lons[1:1000].values, plotter.data.lats[1:1000].values)
+lons, lats = a[:, 0], a[:, 1]
+ax = Axes3D(fig)
+#ax = Axes3D(fig, xlim = [min(plotter.data.lons.values), max(plotter.data.lons.values)], ylim = [-90, 90], zlim = [0, 100000])
 #ax = fig.add_subplot(111, projection = 'PlateCarree', xlim = [-180, 180], ylim = [-90, 90])
 #ax.set_zlim(bottom = 0)
 
-a = ccrs.PlateCarree().transform_points(ccrs.PlateCarree(), plotter.data.lons[1:10000].values, plotter.data.lats[1:10000].values)
-print(a)
+
+#print(a)
 
 target_projection = ccrs.PlateCarree()
 
@@ -62,8 +65,8 @@ ax.add_collection3d(lc)
 
 #print(plotter.data.lons[1:10000].values)
 
-ax.scatter(plotter.data.lons[1:10000], plotter.data.lats[1:10000],
-           plotter.data.z[1:10000], c = "green")
+ax.scatter(lons, lats,
+           plotter.data.z[1:1000], c = "green")
 #ax.scatter(X, Y, Z, transform = ccrs.PlateCarree())
 
 ax.set_xlabel('lon')
