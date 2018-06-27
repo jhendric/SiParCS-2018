@@ -123,7 +123,7 @@ class plot_2D_obs:
         
         print(map(pd_array))
         '''
-
+        
         
         #Convert to pd_array to an xarray DataArray
         self.data = xa.DataArray(pd_array)
