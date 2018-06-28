@@ -26,7 +26,7 @@ Initial attempt at 3D plotting using cartopy.
 plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
 
 fig = plt.figure()
-a = ccrs.PlateCarree().transform_points(ccrs.PlateCarree(), plotter.data.lons[1:1000].values, plotter.data.lats[1:1000].values)
+a = ccrs.PlateCarree().transform_points(ccrs.PlateCarree(), plotter.data.lons[1:10000].values, plotter.data.lats[1:10000].values)
 lons, lats = a[:, 0], a[:, 1]
 ax = Axes3D(fig, xlim = [-180, 180], ylim = [-90, 90])
 
@@ -47,9 +47,9 @@ polys = concat(path.to_polygons() for path in paths)
 lc = PolyCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
 
 ax.add_collection3d(lc)
-
+print(plotter.data.qc_DART.values[:].shape)
 ax.scatter(lons, lats,
-           plotter.data.z[1:1000], c = plotter.data.qc_DART[1:1000], cmap = plt.get_cmap('gist_ncar', 9))
+           plotter.data.z[1:10000], c = plotter.data.values[1:10000].ravel(), cmap = plt.get_cmap('gist_ncar'))
 
 ax.set_xlabel('lon')
 ax.set_ylabel('lat')

@@ -89,9 +89,9 @@ class GUI_3D_obs_initial:
         ttk.Label(self.obs_frame, text = "Observation Type Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
                                 height = 18, width = 40, exportselection = False)
-        self.obs_menu.grid(column = 1, row = 2, rowspan = 2, sticky = "N, S, E, W")
+        self.obs_menu.grid(column = 1, row = 2, rowspan = 1, sticky = "N, S, E, W")
         
-        self.obs_menu.bind('<Return>', lambda event : self.populate('levels', self.level_menu, event))
+        self.obs_menu.bind('<Return>', lambda event : self.populate('qc', self.qc_menu, event))
         
         self.obs_menu.selection_set(0)
         self.obs_menu.event_generate('<<ListboxSelect>>')
@@ -107,7 +107,7 @@ class GUI_3D_obs_initial:
         #qc selection
         
         self.qc_frame = ttk.Frame(self.main_frame, padding = "2")
-        self.qc_frame.grid(column=2, row = 3, sticky = "N, S, E, W")
+        self.qc_frame.grid(column=2, row = 2, sticky = "N, S, E, W")
         ttk.Label(self.qc_frame, text = "DART QC Value Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.qc_menu = Listbox(self.qc_frame, listvariable = self.qc,
                                height = 8, width = 40, selectmode = "extended", exportselection = False)
@@ -135,7 +135,7 @@ class GUI_3D_obs_initial:
                        5 : '5 - Not used because of namelist control',
                        6 : '6 - Rejected because incoming data QC higher than namelist control',
                        7 : '7 - Rejected because of outlier threshold test',
-                       8 : 'TODO'}
+                       8 : '8 - Failed vertical conversion'}
         
         self.populate('qc', self.qc_menu)
 
@@ -150,7 +150,23 @@ class GUI_3D_obs_initial:
         self.qc_bar = ttk.Scrollbar(self.qc_frame, orient = HORIZONTAL, command = self.qc_menu.xview)
         self.qc_menu.configure(xscrollcommand = self.qc_bar.set)
         self.qc_bar.grid(column = 1, row = 3, rowspan = 1, sticky ="N, S, E, W")
-        
+
+        #selection of what value type to plot
+        self.val_type = StringVar()
+        self.val_type.set('QC')
+        self.fill_frame = ttk.Frame(self.main_frame, padding = "2")
+        self.fill_frame.grid(column = 2, row = 3, sticky = "N, S, E, W")
+        ttk.Label(self.fill_frame, text = "Please select type of value to plot").grid(column = 1, row = 1, sticky= "E, W")
+        self.qc_button = ttk.Radiobutton(self.fill_frame, text = 'QC', variable = self.val_type, value = 'QC')
+        self.qc_button.grid(column = 1, row = 2, sticky = "N, S, E, W")
+        self.val_button = ttk.Radiobutton(self.fill_frame, text = 'Observation value', variable = self.val_type,
+                                          value = "Observation value")
+        self.val_button.grid(column = 1, row = 3, sticky = "N, S, E, W")
+
+        #plot button
+        self.plot_button = ttk.Button(self.main_frame, text = "Plot", command = self.plot_3D, padding = "2")
+        self.plot_button.grid(column = 2, row = 4, sticky = "N, S, E, W")
+
         
         #for plotting later
         self.markers = ['o', 'v', 'H', 'D', '^', '<', '8',
@@ -225,7 +241,6 @@ class GUI_3D_obs_initial:
         #make figure and canvas to draw on
         fig = Figure(figsize = (12,8))
         #ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
-        ax = Axes3D(fig, xlim = [-180, 180], ylim = [-90, 90])
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
         canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
         self.main_frame.grid_columnconfigure(1, weight = 1)
@@ -239,9 +254,8 @@ class GUI_3D_obs_initial:
         #disable part of the coordinate display functionality, else everything flickers (may need for smaller window)
         #ax.format_coord = lambda x, y: ''
         
-        
         data = self.plotter.filter_test(self.data_qc, ('qc_DART', qc))
-
+        
         target_projection = ccrs.PlateCarree()
 
         #weird redundant line that works for transformation
@@ -262,7 +276,10 @@ class GUI_3D_obs_initial:
         polys = concat(path.to_polygons() for path in paths)
         
         lc = PolyCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
-        
+
+
+        ax = Axes3D(fig, xlim = [-180, 180], ylim = [-90, 90])
+        ax.set_zlim(bottom = 0, top = max(data.z.values))
         ax.add_collection3d(lc)
         
         #print(data.obs_types.values)
@@ -278,14 +295,27 @@ class GUI_3D_obs_initial:
         indices = np.append(indices, data.obs_types.values.size)
         print(indices)'''
         
+        plot_values = None
+        cmap = None
+        max_value = None
         #colormap for QC values
-        cmap = plt.get_cmap('gist_ncar', 9)
-        ecmap = plt.get_cmap('jet', 90)
+        if self.val_type.get() == 'QC':
+            cmap = plt.get_cmap('gist_ncar', 9)
+            plot_values = data.qc_DART
+            max_value = 8
+        elif self.val_type.get() == 'Observation value':
+            cmap = plt.get_cmap('jet', np.unique(data.values).size)
+            plot_values = data.values.ravel()
+            max_value = max(plot_values)
+        #cmap = plt.get_cmap('gist_ncar', 9)
+        #ecmap = plt.get_cmap('jet', 90)
 
+        print(plot_values.shape)
         #plot each observation type separately to get differing edge colors and markers
-
-        ax.scatter(lons, lats, data.z, c = data.qc_DART,
-                   cmap = cmap, vmin = 0, vmax = 9, s = 50)
+        
+        #ax.scatter(lons, lats, data.z, c = data.qc_DART,
+        #           cmap = cmap, vmin = 0, vmax = 9, s = 35, alpha = 0.5)
+        ax.scatter(lons, lats, data.z, c = plot_values, cmap = cmap, s = 35, alpha = 0.5)
         #label = self.plotter.obs_type_inverse.get(data.obs_types.values[start]))
         #marker = self.markers[i % len(self.markers)], transform = ccrs.PlateCarree())
         
@@ -297,11 +327,14 @@ class GUI_3D_obs_initial:
                   fontsize = 7, framealpha = 0.25)'''
 
         #make color bar
-        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
+        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,max_value))
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
         #cbar.ax.get_xaxis().labelpad = 15
-        cbar.ax.set_xlabel('DART QC Value')
+        if self.val_type.get() == 'QC':
+            cbar.ax.set_xlabel('DART QC Value')
+        elif self.val_type.get() == 'Observation value':
+            cbar.ax.set_xlabel('Observation value')
 
         
         #TODO: make fill colors in legend transparent to avoid confusion
