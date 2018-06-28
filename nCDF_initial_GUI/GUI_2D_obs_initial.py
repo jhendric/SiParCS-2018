@@ -170,7 +170,7 @@ class GUI_2D_obs_initial:
                        5 : '5 - Not used because of namelist control',
                        6 : '6 - Rejected because incoming data QC higher than namelist control',
                        7 : '7 - Rejected because of outlier threshold test',
-                       8 : 'TODO'}
+                       8 : '8 - Failed vertical conversion'}
         
         self.populate('qc', self.qc_menu)
 
