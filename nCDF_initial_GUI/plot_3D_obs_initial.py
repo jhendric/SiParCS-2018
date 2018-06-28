@@ -50,7 +50,7 @@ ax.add_collection3d(lc)
 print(plotter.data.qc_DART.values[:].shape)
 ax.scatter(lons, lats,
            plotter.data.z[1:10000], c = plotter.data.values[1:10000].ravel(), cmap = plt.get_cmap('gist_ncar'))
-
+print(np.unique(plotter.data.times).size)
 ax.set_xlabel('lon')
 ax.set_ylabel('lat')
 ax.set_zlabel('Height')

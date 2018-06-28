@@ -298,6 +298,7 @@ class GUI_3D_obs_initial:
         plot_values = None
         cmap = None
         max_value = None
+        print('num times: ', np.unique(data.times.values).size)
         #colormap for QC values
         if self.val_type.get() == 'QC':
             cmap = plt.get_cmap('gist_ncar', 9)
