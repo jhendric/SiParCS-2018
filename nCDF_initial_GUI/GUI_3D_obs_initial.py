@@ -308,16 +308,19 @@ class GUI_3D_obs_initial:
         plot_values = None
         cmap = None
         max_value = None
+        min_value = None
         print('num times: ', np.unique(data.times.values).size)
         #colormap for QC values
         if self.val_type.get() == 'QC':
             cmap = plt.get_cmap('gist_ncar', 9)
             plot_values = data.qc_DART
             max_value = 8
+            min_value = 0
         elif self.val_type.get() == 'Observation value':
             cmap = plt.get_cmap('jet', np.unique(data.values).size)
             plot_values = data.values.ravel()
             max_value = max(plot_values)
+            min_value = min(plot_values)
         #cmap = plt.get_cmap('gist_ncar', 9)
         #ecmap = plt.get_cmap('jet', 90)
 
@@ -326,7 +329,7 @@ class GUI_3D_obs_initial:
         
         #ax.scatter(lons, lats, data.z, c = data.qc_DART,
         #           cmap = cmap, vmin = 0, vmax = 9, s = 35, alpha = 0.5)
-        ax.scatter(lons, lats, data.z, c = plot_values, cmap = cmap, s = 35, alpha = 0.5)
+        ax.scatter(lons, lats, data.z, c = plot_values, cmap = cmap, vmin = min_value, vmax = max_value, s = 35, alpha = 0.5)
         #label = self.plotter.obs_type_inverse.get(data.obs_types.values[start]))
         #marker = self.markers[i % len(self.markers)], transform = ccrs.PlateCarree())
         
@@ -339,6 +342,7 @@ class GUI_3D_obs_initial:
 
         #make color bar
         sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,max_value))
+        #sm = plt.cm.ScalarMappable(cmap = cmap)
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
         #cbar.ax.get_xaxis().labelpad = 15
