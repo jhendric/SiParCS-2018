@@ -3,6 +3,7 @@ import matplotlib
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection, PolyCollection
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import cartopy.crs as ccrs
@@ -29,6 +30,7 @@ fig = plt.figure()
 a = ccrs.PlateCarree().transform_points(ccrs.PlateCarree(), plotter.data.lons[1:10000].values, plotter.data.lats[1:10000].values)
 lons, lats = a[:, 0], a[:, 1]
 ax = Axes3D(fig, xlim = [-180, 180], ylim = [-90, 90])
+zmax = max(plotter.data.z.values)
 
 concat = lambda iterable: list(itertools.chain.from_iterable(iterable))
 
@@ -43,8 +45,14 @@ geoms = [target_projection.project_geometry(geom, feature.crs) for geom in geoms
 paths = concat(geos_to_path(geom) for geom in geoms)
 
 polys = concat(path.to_polygons() for path in paths)
+print(type(polys[0][0]))
+#print(polys)
+#print([[[point] for point in shape] for shape in polys])
+polys = [[(point[0], point[1], zmax) for point in shape] for shape in polys]
+#print(polys.shape)
+#polys = [x, y, zmax for x,y 
 
-lc = PolyCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
+lc = Poly3DCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
 
 ax.add_collection3d(lc)
 print(plotter.data.qc_DART.values[:].shape)

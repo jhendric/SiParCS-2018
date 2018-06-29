@@ -14,6 +14,7 @@ from matplotlib.figure import Figure
 from matplotlib.collections import LineCollection, PolyCollection
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import cartopy.crs as ccrs
@@ -274,13 +275,22 @@ class GUI_3D_obs_initial:
         paths = concat(geos_to_path(geom) for geom in geoms)
         
         polys = concat(path.to_polygons() for path in paths)
-        
-        lc = PolyCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
-
 
         ax = Axes3D(fig, xlim = [-180, 180], ylim = [-90, 90])
-        ax.set_zlim(bottom = 0, top = max(data.z.values))
-        ax.add_collection3d(lc)
+        z_max = max(data.z.values)
+
+        #deal with orientation of graph for different vert types
+        if data.vert_types.values[0] < 0 or data.vert_types.values[0] == 3:
+            #surface, heights, or unknown units where up is positive direction
+            lc = Poly3DCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
+            ax.set_zlim(bottom = 0, top = z_max)
+            ax.add_collection3d(lc)
+        else:
+            #level or pressure units where down is positive direction
+            polys = [[(point[0], point[1], z_max) for point in shape] for shape in polys]
+            lc = Poly3DCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
+            ax.set_zlim(bottom = z_max, top = 0)
+            ax.add_collection3d(lc)
         
         #print(data.obs_types.values)
         print(data.obs_types.values.size)
