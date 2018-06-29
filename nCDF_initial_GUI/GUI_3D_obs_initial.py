@@ -3,7 +3,6 @@
 from tkinter import *
 from tkinter import ttk
 
-import mkl
 import xarray as xa
 
 import matplotlib
@@ -48,12 +47,8 @@ class GUI_3D_obs_initial:
         
         self.plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
         self.original_data = self.plotter.data
-        #print('initial test: ', np.unique(self.plotter.data.where(
-        #    self.plotter.data.obs_types == 5, drop = True).z.values))
-        #print('initial test: ')
-        #x = self.plotter.data.where(self.plotter.data.obs_types == 5, drop = True)
-        #print(x.where(abs(x.z - 460.0) < 1e-10, drop = True))
-        print(np.unique(self.plotter.obs_types.values).size)
+        
+        print(np.unique(self.original_data.obs_types.values).size)
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
@@ -204,10 +199,7 @@ class GUI_3D_obs_initial:
                                          (self.data_request_dict[var], indices)))
 
         #set corresponding menu variables
-        if var == 'data_levels':
-            self.levels.set(value = np.unique(getattr(self, var).z.values))
-
-        elif var == 'data_qc':
+        if var == 'data_qc':
             unique, counts = np.unique(getattr(self, var).qc_DART.values, return_counts = True)
             count_dict = dict(zip(unique, counts))
             print(count_dict)
@@ -282,7 +274,7 @@ class GUI_3D_obs_initial:
         #deal with orientation of graph for different vert types
         if data.vert_types.values[0] < 0 or data.vert_types.values[0] == 3:
             #surface, heights, or unknown units where up is positive direction
-            lc = Poly3DCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
+            lc = PolyCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
             ax.set_zlim(bottom = 0, top = z_max)
             ax.add_collection3d(lc)
         else:
@@ -292,18 +284,9 @@ class GUI_3D_obs_initial:
             ax.set_zlim(bottom = z_max, top = 0)
             ax.add_collection3d(lc)
         
-        #print(data.obs_types.values)
         print(data.obs_types.values.size)
         print(np.unique(data.qc_DART.values))
         print(np.unique(data.obs_types.values))
-
-        '''
-        #get indices where obs_types change (array is sorted in filter_disjoint)
-        indices = np.where(data.obs_types.values[:-1] != data.obs_types.values[1:])[0]
-        indices[0:indices.size] += 1
-        indices = np.insert(indices, 0, 0)
-        indices = np.append(indices, data.obs_types.values.size)
-        print(indices)'''
         
         plot_values = None
         cmap = None

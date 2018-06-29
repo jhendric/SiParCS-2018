@@ -33,69 +33,68 @@ class plot_2D_obs:
 
         mkl.set_num_threads(128)
         
-        self.dataset = xa.open_dataset(file_path)
-  
+        dataset = xa.open_dataset(file_path)
+
+        #all "strings" form the file actually need to be decoded into Python strings
         def bytes_to_string(self, bytes):
             return ''.join(bytes.decode('UTF-8').split())
 
         bytes_to_string = np.vectorize(bytes_to_string)
                
 
-        self.obs_type_strings = bytes_to_string(self, self.dataset['ObsTypesMetaData'].values)
-        self.copy_strings = bytes_to_string(self, self.dataset['CopyMetaData'].values)
-        self.QC_strings = bytes_to_string(self, self.dataset['QCMetaData'].values)
-        self.obs_types_meta_indexer = self.dataset['ObsTypes']
+        obs_type_strings = bytes_to_string(self, dataset['ObsTypesMetaData'].values)
+        copy_strings = bytes_to_string(self, dataset['CopyMetaData'].values)
+        QC_strings = bytes_to_string(self, dataset['QCMetaData'].values)
+        obs_types_meta_indexer = dataset['ObsTypes']
 
         
-        self.times = self.dataset['time']
-        self.obs_types = self.dataset['obs_type']
+        times = dataset['time']
+        obs_types = dataset['obs_type']
         #not currently using keys but defining it here
-        self.keys = self.dataset['obs_keys']
-        self.vert_types = self.dataset['which_vert']
-
-        
+        keys = dataset['obs_keys']
+        vert_types = dataset['which_vert']
         
         '''
         MISSING MISSING DATA ACCOUNTABILITY HERE
         '''
-        self.locs = self.dataset['location']
-        self.obs = self.dataset['observations']
-        print(self.obs.size)
-        self.qc = self.dataset['qc']
+        
+        locs = dataset['location']
+        obs = dataset['observations']
+        print(obs.size)
+        qc = dataset['qc']
 
-        self.my_types = np.unique(self.obs_types.values)
-        self.time_units = self.times.dtype
-        self.time_range = self.times.attrs['valid_range']
-        self.calendar = 'Gregorian' #don't know how to get other calendar types
+        my_types = np.unique(obs_types.values)
+        time_units = times.dtype
+        time_range = times.attrs['valid_range']
+        calendar = 'Gregorian' #don't know how to get other calendar types
         #missing some other time stuff
 
         #don't have the verbose section
 
         #only getting things that are the actual obs (not prior and posterior members)
-        self.obs_ind = 0
-        self.obs = self.obs[:, self.obs_ind]
-        print(self.obs.size)
+        obs_ind = 0
+        obs = obs[:, obs_ind]
+        print(obs.size)
         
-        self.lons = self.locs[:, 0]
-        self.lats = self.locs[:, 1]
-        self.z = self.locs[:, 2]
+        lons = locs[:, 0]
+        lats = locs[:, 1]
+        z = locs[:, 2]
 
         #first create a pandas DataFrame
         
-        pd_array = pd.DataFrame({'obs_types' : self.obs_types.values,
-                                 'times' : self.times.values,
-                                 'lons' : self.lons.values,
-                                 'lats' : self.lats.values,
-                                 'z' : self.z.values,
-                                 'vert_types' : self.vert_types.values,
-                                 'qc_DATA' : self.qc[:, 0].values,
-                                 'qc_DART' : self.qc[:, 1].values,
-                                 'obs' : self.obs.values
+        pd_array = pd.DataFrame({'obs_types' : obs_types.values,
+                                 'times' : times.values,
+                                 'lons' : lons.values,
+                                 'lats' : lats.values,
+                                 'z' : z.values,
+                                 'vert_types' : vert_types.values,
+                                 'qc_DATA' : qc[:, 0].values,
+                                 'qc_DART' : qc[:, 1].values,
+                                 'obs' : obs.values
                                  })
 
         #use set_index to create a MultiIndex so I can access fields that xarray wouldn't normally
         #treat as accessible fields
-
         
         pd_array.set_index(['obs_types', 'times', 'lons', 'lats', 'z',
                             'qc_DATA', 'qc_DART', 'vert_types'], inplace = True)
@@ -106,9 +105,9 @@ class plot_2D_obs:
         
         ''' Function guideline for if I ever want to create a proper dimensional xarray DataArray
         
-        test_array = np.column_stack((np.array(self.lons.values, columns = ['lons']),
-        np.array(self.lats.values, columns = ['lats']),
-        np.array(self.obs.values, columns = ['obs'])))
+        test_array = np.column_stack((np.array(lons.values, columns = ['lons']),
+        np.array(lats.values, columns = ['lats']),
+        np.array(obs.values, columns = ['obs'])))
         
         def map(array):
             keys, values = array.sort_values('lons').values.T
@@ -130,23 +129,18 @@ class plot_2D_obs:
         self.data = self.data.sortby(self.data.obs_types)
         print(self.data)
 
-        #map obs type strings to the obs type integers that observations actually have
+        #map obs type strings to obs type integers that observations have
         obs_type_dict = dict([(type_string, index +1 )
-                                   for index, type_string in enumerate(self.obs_type_strings)])
+                                   for index, type_string in enumerate(obs_type_strings)])
 
+        #inverse of above dictionary
         self.obs_type_inverse = dict((v, k) for k, v in obs_type_dict.items())
 
         existing_obs = np.unique(self.data.obs_types.values)
 
+        #dict containing only the types that exist in the file
         self.obs_type_dict = dict([(self.obs_type_inverse[i], i)
                                    for i in existing_obs])
-
-        
-        #demonstration of how to properly use where
-        #a = self.data.where(self.data.lats > 80)
-        #print(self.data.where(self.data.lats > 80, drop = True))
-        #b = self.data.where(self.data.lats > 80, drop = True)
-        #print(b = b.where(b.lats < 81, drop = True))
 
         
         
@@ -189,7 +183,9 @@ class plot_2D_obs:
                            
     def filter_disjoint(self, dataset, *args):
         '''Take list of tuples of form ('category_name', [values]) and return lons, lats, and
-        observation values satisfying these conditions'''
+        observation values satisfying these conditions
+        Discontinued in favor of filter_test which has significantly better performance'''
+        
 
         data = dataset
 
@@ -234,7 +230,9 @@ class plot_2D_obs:
         return data
 
     def filter_test(self, dataset, *args):
-
+        '''uses numpy's isin function, a very fast masking function that accepts lists of values for comparison
+        unlike xarray'''
+        
         data = dataset
 
         cat_dict = {

@@ -41,7 +41,7 @@ class GUI_2D_obs_initial:
         #print('initial test: ')
         #x = self.plotter.data.where(self.plotter.data.obs_types == 5, drop = True)
         #print(x.where(abs(x.z - 460.0) < 1e-10, drop = True))
-        print(np.unique(self.plotter.obs_types.values).size)
+        #print(np.unique(self.plotter.obs_types.values).size)
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
