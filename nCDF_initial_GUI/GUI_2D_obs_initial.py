@@ -342,12 +342,16 @@ class GUI_2D_obs_initial:
                   fontsize = 7, framealpha = 0.25)
 
         #make color bar
-        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
+        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,9))
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
-        #cbar.ax.get_xaxis().labelpad = 15
         cbar.ax.set_xlabel('DART QC Value')
 
+        #center colorbar ticks and labels
+        labels = np.arange(0, 9, 1)
+        loc = labels + 0.5
+        cbar.set_ticks(loc)
+        cbar.set_ticklabels(labels)
         
         #TODO: make fill colors in legend transparent to avoid confusion
         #leg = ax.get_legend()

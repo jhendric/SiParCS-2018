@@ -274,6 +274,7 @@ class GUI_3D_obs_initial:
         #deal with orientation of graph for different vert types
         if data.vert_types.values[0] < 0 or data.vert_types.values[0] == 3:
             #surface, heights, or unknown units where up is positive direction
+            #don't need to do 3D polygons since it will plot 2D polygons at z = 0 by default
             lc = PolyCollection(polys, edgecolor = 'black', facecolor = 'green', closed = False)
             ax.set_zlim(bottom = 0, top = z_max)
             ax.add_collection3d(lc)
@@ -324,7 +325,7 @@ class GUI_3D_obs_initial:
                   fontsize = 7, framealpha = 0.25)'''
 
         #make color bar
-        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,max_value))
+        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,max_value+1))
         #sm = plt.cm.ScalarMappable(cmap = cmap)
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
@@ -332,8 +333,16 @@ class GUI_3D_obs_initial:
 
         #set up color bar title according to plot type
         if self.val_type.get() == 'QC':
+            
             cbar.ax.set_xlabel('DART QC Value')
+            #also center colorbar ticks and labels
+            labels = np.arange(0, max_value + 1, 1)
+            loc = labels + 0.5
+            cbar.set_ticks(loc)
+            cbar.set_ticklabels(labels)
+            
         elif self.val_type.get() == 'Observation value':
+            
             #get observation name
             cbar.ax.set_xlabel(self.obs_menu.get(self.obs_menu.curselection()).split(" : ", 1)[1])
 
