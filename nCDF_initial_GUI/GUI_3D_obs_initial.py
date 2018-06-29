@@ -332,10 +332,13 @@ class GUI_3D_obs_initial:
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
         #cbar.ax.get_xaxis().labelpad = 15
+
+        #set up color bar title according to plot type
         if self.val_type.get() == 'QC':
             cbar.ax.set_xlabel('DART QC Value')
         elif self.val_type.get() == 'Observation value':
-            cbar.ax.set_xlabel('Observation value')
+            #get observation name
+            cbar.ax.set_xlabel(self.obs_menu.get(self.obs_menu.curselection()).split(" : ", 1)[1])
 
         
         #TODO: make fill colors in legend transparent to avoid confusion
