@@ -77,6 +77,8 @@ class GUI_3D_obs_initial:
                                                  " : " + x for x in obs_type_dict_sparse])
                                                  
 
+   
+        
         #GUI config
 
         #observation selection
@@ -87,7 +89,7 @@ class GUI_3D_obs_initial:
                                 height = 18, width = 40, exportselection = False)
         self.obs_menu.grid(column = 1, row = 2, rowspan = 1, sticky = "N, S, E, W")
         
-        self.obs_menu.bind('<Return>', lambda event : self.populate('qc', self.qc_menu, event))
+        self.obs_menu.bind('<Return>', lambda event : self.populate('times', self.times_menu, event))
         
         self.obs_menu.selection_set(0)
         self.obs_menu.event_generate('<<ListboxSelect>>')
@@ -97,31 +99,62 @@ class GUI_3D_obs_initial:
         self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
         self.obs_menu.configure(yscrollcommand = self.obs_bar.set)
         self.obs_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, E")
-         
-        self.qc = StringVar()
+
+
+        #time selection
+        self.times = StringVar()
+        
+        self.times_frame = ttk.Frame(self.main_frame, padding = "2")
+        self.times_frame.grid(column = 2, row = 2, sticky = "N, S, E, W")
+        ttk.Label(self.times_frame, text = "Observation Times Selection").grid(column = 1, row = 1, sticky = "E, W")
+        self.times_menu = Listbox(self.times_frame, listvariable = self.times,
+                                 height = 18, width = 40, selectmode = "extended", exportselection = False)
+        self.times_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
+        self.times_menu.bind('<Return>', lambda event : self.populate('qc', self.qc_menu, event))
+
+        self.times_bar = ttk.Scrollbar(self.times_frame, orient = VERTICAL, command = self.times_menu.yview)
+        self.times_menu.configure(yscrollcommand = self.times_bar.set)
+        self.times_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, E")
+        
+        
         
         #qc selection
+
+        self.qc = StringVar()
         
         self.qc_frame = ttk.Frame(self.main_frame, padding = "2")
-        self.qc_frame.grid(column=2, row = 2, sticky = "N, S, E, W")
+        self.qc_frame.grid(column=2, row = 3, sticky = "N, S, E, W")
         ttk.Label(self.qc_frame, text = "DART QC Value Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.qc_menu = Listbox(self.qc_frame, listvariable = self.qc,
                                height = 8, width = 40, selectmode = "extended", exportselection = False)
         self.qc_menu.grid(column = 1, row = 2, sticky ="N, S, E, W")
-
+                
+        #qc scrollbar
+        self.qc_bar = ttk.Scrollbar(self.qc_frame, orient = HORIZONTAL, command = self.qc_menu.xview)
+        self.qc_menu.configure(xscrollcommand = self.qc_bar.set)
+        self.qc_bar.grid(column = 1, row = 3, rowspan = 1, sticky ="N, S, E, W")
+        
         #for use in populating and clearing menus (in populate function)
         self.data_obs_types = 1
-        self.data_qc = 2
+        self.data_times = 2
+        self.data_qc = 3
         
         self.data_request_dict = {
-            'data_qc' : 'obs_types'
+            'data_times' : 'obs_types',
+            'data_qc' : 'times'
         }
         
-        self.menu_hierarchy = [self.obs_menu, self.qc_menu]
-        self.data_hierarchy = ['original_data', 'data_qc']
-        
-        #populate levels
+        self.menu_hierarchy = [self.obs_menu, self.times_menu, self.qc_menu]
+        self.data_hierarchy = ['original_data', 'data_times', 'data_qc']
 
+        #populate times
+        self.populate('times', self.times_menu)
+
+        #plot all times by default
+        for i in range(len(self.times.get())):
+            self.times_menu.selection_set(i)
+        self.times_menu.event_generate('<<ListboxSelect>>')
+        
         #populate qc
         self.qc_key = {0 : '0 - Assimilated O.K.',
                        1 : '1 - Evaulated O.K., not assimilated because namelist specified evaluate only',
@@ -132,26 +165,22 @@ class GUI_3D_obs_initial:
                        6 : '6 - Rejected because incoming data QC higher than namelist control',
                        7 : '7 - Rejected because of outlier threshold test',
                        8 : '8 - Failed vertical conversion'}
+
         
         self.populate('qc', self.qc_menu)
 
-        #current plotting occurs only with press of enter from qc menu
+        #current plotting occurs with press of enter from qc menu or click of plot button
         self.qc_menu.bind('<Return>', self.plot_3D)
         for i in range(len(self.qc.get())):
             self.qc_menu.selection_set(i)
         self.qc_menu.event_generate('<<ListboxSelect>>')
 
         
-        #qc scrollbar
-        self.qc_bar = ttk.Scrollbar(self.qc_frame, orient = HORIZONTAL, command = self.qc_menu.xview)
-        self.qc_menu.configure(xscrollcommand = self.qc_bar.set)
-        self.qc_bar.grid(column = 1, row = 3, rowspan = 1, sticky ="N, S, E, W")
-
         #selection of what value type to plot
         self.val_type = StringVar()
         self.val_type.set('QC')
         self.fill_frame = ttk.Frame(self.main_frame, padding = "2")
-        self.fill_frame.grid(column = 2, row = 3, sticky = "N, S, E, W")
+        self.fill_frame.grid(column = 2, row = 4, sticky = "N, S, E, W")
         ttk.Label(self.fill_frame, text = "Please select type of value to plot").grid(column = 1, row = 1, sticky= "E, W")
         self.qc_button = ttk.Radiobutton(self.fill_frame, text = 'QC', variable = self.val_type, value = 'QC')
         self.qc_button.grid(column = 1, row = 2, sticky = "N, S, E, W")
@@ -161,7 +190,7 @@ class GUI_3D_obs_initial:
 
         #plot button
         self.plot_button = ttk.Button(self.main_frame, text = "Plot", command = self.plot_3D, padding = "2")
-        self.plot_button.grid(column = 2, row = 4, sticky = "N, S, E, W")
+        self.plot_button.grid(column = 2, row = 5, sticky = "N, S, E, W")
 
         
         #for plotting later
@@ -189,17 +218,24 @@ class GUI_3D_obs_initial:
         var = 'data_' + variable_name
 
         #TODO: this differs from the 2D obs and should be more modularized at some point to match hierarchy idea
-        if var == 'data_qc':
+
+        if var == 'data_times':
             indices = [self.plotter.obs_type_dict[self.obs_menu.get(val).split(" : ", 1)[1]]
                        for val in self.obs_menu.curselection()]
-
+        
+        elif var == 'data_qc':
+            indices = [np.datetime64(self.times_menu.get(val).replace('\'', '')) for val in self.times_menu.curselection()]
+            
         #retrieve relevant data for this level of the hierarchy
         setattr(self, var,
                 self.plotter.filter_test(getattr(self, self.data_hierarchy[self.data_hierarchy[1:].index(var)]),
                                          (self.data_request_dict[var], indices)))
 
         #set corresponding menu variables
-        if var == 'data_qc':
+        if var == 'data_times':
+            self.times.set(value = np.unique(getattr(self, var).times.values))
+            
+        elif var == 'data_qc':
             unique, counts = np.unique(getattr(self, var).qc_DART.values, return_counts = True)
             count_dict = dict(zip(unique, counts))
             print(count_dict)
@@ -248,6 +284,10 @@ class GUI_3D_obs_initial:
         #ax.format_coord = lambda x, y: ''
         
         data = self.plotter.filter_test(self.data_qc, ('qc_DART', qc))
+
+        print('z: ', data.z.values)
+
+        print('times: ', data.times.values)
         
         target_projection = ccrs.PlateCarree()
 
