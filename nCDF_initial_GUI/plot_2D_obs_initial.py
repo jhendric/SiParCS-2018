@@ -235,6 +235,7 @@ class plot_2D_obs:
         
         data = dataset
 
+        #this can be changed to a getattr command
         cat_dict = {
             
             'obs_types' : data.obs_types,
@@ -253,8 +254,6 @@ class plot_2D_obs:
         for (category_name, values) in args:
             
             category = cat_dict[category_name]
-
-            
             
             if type(category.values[0]) == np.dtype('float64'):
                 #rounding to prevent float comparison mistakes

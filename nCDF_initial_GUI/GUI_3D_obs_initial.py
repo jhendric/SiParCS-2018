@@ -271,7 +271,7 @@ class GUI_3D_obs_initial:
         fig = Figure(figsize = (12,8))
         #ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
-        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
+        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 4, sticky = "N, S, E, W")
         self.main_frame.grid_columnconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(1, weight = 1)
 
@@ -284,10 +284,6 @@ class GUI_3D_obs_initial:
         #ax.format_coord = lambda x, y: ''
         
         data = self.plotter.filter_test(self.data_qc, ('qc_DART', qc))
-
-        print('z: ', data.z.values)
-
-        print('times: ', data.times.values)
         
         target_projection = ccrs.PlateCarree()
 
