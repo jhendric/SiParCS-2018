@@ -154,8 +154,15 @@ class ReadDiag:
         analysis = self.filter_single(analysis, ('copy', 'rmse'))
 
         #create 4 subplots
-        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1)
-        
+        #need to modularize this and function parameters to allow different numbers of plots
+        fig, (ax1, ax2, ax3) = plt.subplots(4, 1)
+
+        for index, ax in enumerate((ax1, ax2, ax3)):
+            forecast_region = forecast.where(forecast.region == index, drop = True)
+            analysis_region = analysis.where(analysis.region == index, drop = True)
+            possible_obs_region = possible_obs.where(possible_obs.region == index, drop = True)
+            used_obs_region = used_obs.where(used_obs.region == index, drop = True)
+            ax.scatter(
         
     
 def main():
