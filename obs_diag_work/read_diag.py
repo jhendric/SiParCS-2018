@@ -19,7 +19,10 @@ class ReadDiag:
     def __init__(self, file_path):
         
         self.full_data = xa.open_dataset(file_path)
-        
+
+    def bytes_to_string(self, bytes):
+        return ''.join(bytes.decode('UTF-8').split())
+                
     def get_variable(self, variable_name, plot_type, data_type, dataset):
 
         '''
@@ -64,17 +67,12 @@ class ReadDiag:
                 
             else:
                 
-                #strings in file need to be decoded into Python strings
-                def bytes_to_string(self, bytes):
-                    return ''.join(bytes.decode('UTF-8').split())
-
-                
                 value_converted = None
 
                 meta_data = self.full_data['CopyMetaData']
 
                 for i in range(len(meta_data)):
-                    if bytes_to_string(self, meta_data.values[i]) == value:
+                    if self.bytes_to_string(meta_data.values[i]) == value:
                         value_converted = meta_data['copy'].values[i]
                         break
                     
@@ -104,11 +102,6 @@ class ReadDiag:
                     mask = np.isin(category.values, values)
 
             else:
-
-                #strings in file need to be decoded into Python strings
-                def bytes_to_string(self, bytes):
-                    return ''.join(bytes.decode('UTF-8').split())
-
                 
                 values_converted = ()
 
@@ -116,7 +109,7 @@ class ReadDiag:
                 for value in values:
                     #convert strings to copy indices
                     for i in range(len(meta_data)):
-                        if bytes_to_string(self, meta_data.values[i]) == value:
+                        if self.bytes_to_string(meta_data.values[i]) == value:
                             values_converted.append(meta_data['copy'].values[i])
 
                 #this may not work because copy is a reserved word in python
@@ -156,8 +149,8 @@ class ReadDiag:
         print('forecast filtered to 1 level', forecast)
         print('analysis filtered to 1 level', analysis)
             
-        possible_obs = self.filter_single(analysis, ('copy', 'Nposs'))
-        used_obs = self.filter_single(analysis, ('copy', 'Nused'))
+        possible_obs = self.filter_single(forecast, ('copy', 'Nposs'))
+        used_obs = self.filter_single(forecast, ('copy', 'Nused'))
         
         #only need rmse from forecast and analysis
 
@@ -168,7 +161,7 @@ class ReadDiag:
         
         #create 4 subplots
         #need to modularize this and function parameters to allow different numbers of plots
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize = (8,8))
 
         for index, ax in enumerate((ax1, ax2, ax3)):
 
@@ -190,38 +183,68 @@ class ReadDiag:
             '''
 
             
-            ax.scatter(x = forecast_region.time.values, y = forecast_region.values, color = 'black', marker = 'x')
+            ax.scatter(x = forecast_region.time.values, y = forecast_region.values,
+                       edgecolors = 'black', marker = 'x', s = 25)
             ax.plot(forecast_region.time.values, forecast_region.values.flatten(), 'kx-')
-            ax.scatter(x = analysis_region.time.values, y = analysis_region.values, color = 'red', marker = 'o')
-            ax.plot(analysis_region.time.values, analysis_region.values.flatten(), 'ro-')
+            ax.scatter(x = analysis_region.time.values, y = analysis_region.values,
+                       edgecolors = 'red', marker = 'o', s = 25, facecolors = 'none')
+            ax.plot(analysis_region.time.values, analysis_region.values.flatten(), 'ro-', mfc = 'none')
 
             ax.set_xlim(forecast_region.time.values[0].astype("M8[ms]"),
                          forecast_region.time.values[forecast_region.time.values.size - 1].astype("M8[ms]"))
 
-            ax.set_ylim(0, 3)
+            #subplot title
+            print('forecast: ', forecast_region.values.flatten())
+            print('forecast mean: ', np.nanmean(forecast_region.values.flatten()))
+            ax.set_title(str(self.bytes_to_string(dataset['region_names'].values[index])) + '     ' +
+                     'forecast: mean = ' + str(np.nanmean(forecast_region.values.flatten())) + '     ' +
+                     'analysis: mean = ' + str(np.nanmean(analysis_region.values.flatten())))
+            
+            y_max = max(np.nanmax(forecast_region.values.flatten()), np.nanmax(analysis_region.values.flatten()))
+            
+            ax.set_ylim(0, y_max)
+            ax.set_ylabel(str(self.bytes_to_string(dataset['region_names'].values[index])) + '\n' + 'rmse')
+            
+            #add horizontal and vertical lines
+            for i in range(1, int(y_max)):
+                ax.axhline(y = i, ls = ':')
 
+            for time in ax.get_xticks():
+                ax.axvline(x = time, ls = ':')
+            
             #need to basically plot two plots on top of each other to get 2 y scales
             ax_twin = ax.twinx()
-            ax_twin.scatter(x = possible_obs_region.time.values, y = possible_obs_region.values, color = 'blue', marker = 'o')
-            ax_twin.scatter(x = used_obs_region.time.values, y = used_obs_region.values, color = 'blue', marker = 'x')
+            ax_twin.scatter(x = possible_obs_region.time.values, y = possible_obs_region.values,
+                            color = 'blue', marker = 'o', s = 25, facecolors = 'none')
+            ax_twin.scatter(x = used_obs_region.time.values, y = used_obs_region.values,
+                            color = 'blue', marker = 'x', s = 25)
+            '''
+            print('possible obs: ', possible_obs_region.values.flatten())
+            print('used obs: ', used_obs_region.values.flatten())
+            print('difference in obs: ', possible_obs_region.values.flatten()-used_obs_region.values.flatten())'''
             ax_twin.set_ylim(0, max(max(possible_obs_region.values), max(used_obs_region.values)) + 10)
             
             #possible_obs_region.scatter
-            
+
+        #need to add units
+        plt.suptitle(str(obs_type) + ' @ ' + str(level))
+        plt.subplots_adjust(hspace = 0.8)
+        #fig.tight_layout()
         plt.show()
     
 def main():
     
     #reader = ReadDiag('../obs_series/obs_diag_output.nc')
-    reader = ReadDiag('obs_diag_output_b_3inf.nc')
+    #reader = ReadDiag('obs_diag_output_b_3inf.nc')
+    reader = ReadDiag('obs_diag_output.nc')
     #data = reader.get_variable('RADIOSONDE_U_WIND_COMPONENT', 'time series', 'forecast',
     #                           reader.full_data)
     #print(data)
     #data = reader.filter_single(data, ('region', 2))
     #data = reader.filter_single(data, ('copy', 'rmse'))
-    #reader.plot_evolution('RADIOSONDE_U_WIND_COMPONENT', 925.0, reader.full_data)
+    reader.plot_evolution('RADIOSONDE_U_WIND_COMPONENT', 925.0, reader.full_data)
     #reader.plot_evolution('RADIOSONDE_U_WIND_COMPONENT', 687.5, reader.full_data)
-    reader.plot_evolution('AIRCRAFT_TEMPERATURE', 400.0, reader.full_data)
+    #reader.plot_evolution('AIRCRAFT_TEMPERATURE', 400.0, reader.full_data)
 if __name__ == "__main__":
     main()
             
