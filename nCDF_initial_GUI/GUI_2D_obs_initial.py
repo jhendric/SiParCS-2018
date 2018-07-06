@@ -41,11 +41,9 @@ class GUI_2D_obs_initial:
         #print('initial test: ')
         #x = self.plotter.data.where(self.plotter.data.obs_types == 5, drop = True)
         #print(x.where(abs(x.z - 460.0) < 1e-10, drop = True))
-<<<<<<< HEAD
+
         #print(np.unique(self.plotter.obs_types.values).size)
-=======
-        print(np.unique(self.plotter.obs_types.values).size)
->>>>>>> GUI_2D_obs
+
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
@@ -174,11 +172,7 @@ class GUI_2D_obs_initial:
                        5 : '5 - Not used because of namelist control',
                        6 : '6 - Rejected because incoming data QC higher than namelist control',
                        7 : '7 - Rejected because of outlier threshold test',
-<<<<<<< HEAD
                        8 : '8 - Failed vertical conversion'}
-=======
-                       8 : 'TODO'}
->>>>>>> GUI_2D_obs
         
         self.populate('qc', self.qc_menu)
 
@@ -350,7 +344,7 @@ class GUI_2D_obs_initial:
                   fontsize = 7, framealpha = 0.25)
 
         #make color bar
-<<<<<<< HEAD
+
         sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,9))
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
@@ -361,15 +355,7 @@ class GUI_2D_obs_initial:
         loc = labels + 0.5
         cbar.set_ticks(loc)
         cbar.set_ticklabels(labels)
-=======
-        sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,8))
-        sm._A = []
-        cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
-        #cbar.ax.get_xaxis().labelpad = 15
-        cbar.ax.set_xlabel('DART QC Value')
 
->>>>>>> GUI_2D_obs
-        
         #TODO: make fill colors in legend transparent to avoid confusion
         #leg = ax.get_legend()
         #for handle in leg.legendHandles:
