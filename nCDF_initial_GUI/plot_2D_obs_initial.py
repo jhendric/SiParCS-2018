@@ -36,11 +36,13 @@ class plot_2D_obs:
         dataset = xa.open_dataset(file_path)
 
         #all "strings" form the file actually need to be decoded into Python strings
+
         def bytes_to_string(self, bytes):
             return ''.join(bytes.decode('UTF-8').split())
 
         bytes_to_string = np.vectorize(bytes_to_string)
                
+
 
         obs_type_strings = bytes_to_string(self, dataset['ObsTypesMetaData'].values)
         copy_strings = bytes_to_string(self, dataset['CopyMetaData'].values)
@@ -57,6 +59,7 @@ class plot_2D_obs:
         '''
         MISSING MISSING DATA ACCOUNTABILITY HERE
         '''
+
         
         locs = dataset['location']
         obs = dataset['observations']
@@ -72,6 +75,7 @@ class plot_2D_obs:
         #don't have the verbose section
 
         #only getting things that are the actual obs (not prior and posterior members)
+
         obs_ind = 0
         obs = obs[:, obs_ind]
         print(obs.size)
@@ -105,6 +109,7 @@ class plot_2D_obs:
         
         ''' Function guideline for if I ever want to create a proper dimensional xarray DataArray
         
+
         test_array = np.column_stack((np.array(lons.values, columns = ['lons']),
         np.array(lats.values, columns = ['lats']),
         np.array(obs.values, columns = ['obs'])))
@@ -129,6 +134,7 @@ class plot_2D_obs:
         self.data = self.data.sortby(self.data.obs_types)
         print(self.data)
 
+
         #map obs type strings to obs type integers that observations have
         obs_type_dict = dict([(type_string, index +1 )
                                    for index, type_string in enumerate(obs_type_strings)])
@@ -138,7 +144,9 @@ class plot_2D_obs:
 
         existing_obs = np.unique(self.data.obs_types.values)
 
+
         #dict containing only the types that exist in the file
+
         self.obs_type_dict = dict([(self.obs_type_inverse[i], i)
                                    for i in existing_obs])
 
@@ -263,6 +271,7 @@ class plot_2D_obs:
             else:
                 mask = np.isin(category.values, values)
             
+
             #index data using mask to get needed values
             data = data[mask]
 

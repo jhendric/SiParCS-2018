@@ -1,9 +1,13 @@
+#!/Users/wbd1/anaconda3/bin/python3
+
+import mkl
 import xarray as xa
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import pandas as pd
+import math
 '''
 
 Redo of "3D_plot_initial.py" to have structuring more appropriate for
@@ -22,9 +26,11 @@ inf is float('inf')
 
 '''
 
-class plot_2D_obs_initial:
+class plot_2D_obs:
 
     def __init__(self, file_path):
+
+        mkl.set_num_threads(128)
         
         self.dataset = xa.open_dataset(file_path)
   
@@ -33,155 +39,215 @@ class plot_2D_obs_initial:
 
         bytes_to_string = np.vectorize(bytes_to_string)
                
-        self.obs_types = self.dataset['ObsTypes']
-        #print(type(self.obs_types[0]))
+
         self.obs_type_strings = bytes_to_string(self, self.dataset['ObsTypesMetaData'].values)
-        #print(type(self.obs_type_strings[0]))
         self.copy_strings = bytes_to_string(self, self.dataset['CopyMetaData'].values)
-        #print(type(self.copy_strings[0]))
         self.QC_strings = bytes_to_string(self, self.dataset['QCMetaData'].values)
-        #print(type(self.QC_strings[0]))
+        self.obs_types_meta_indexer = self.dataset['ObsTypes']
+
+        #map obs type strings to the obs type integers that observations actually have
+        self.obs_type_dict = dict([(type_string, index +1 )
+                                   for index, type_string in enumerate(self.obs_type_strings)])
         
-        self.time = self.dataset['time'] #may need to change these three lines to .values
-        #print(type(self.time[0]))
-        self.obs_type = self.dataset['obs_type']
-        #print(type(self.obs_type[0]))
-        self.obs_keys = self.dataset['obs_keys']
-        #print(type(self.obs_keys[0]))
-        self.vert_type = self.dataset['which_vert']
-        #print(type(self.vert_type[0]))
+        
+        self.times = self.dataset['time']
+        self.obs_types = self.dataset['obs_type']
+        #not currently using keys but defining it here
+        self.keys = self.dataset['obs_keys']
+        self.vert_types = self.dataset['which_vert']
         '''
         MISSING MISSING DATA ACCOUNTABILITY HERE
         '''
-        self.location = self.dataset['location']
-        #print(type(self.location[0]))
+        self.locs = self.dataset['location']
         self.obs = self.dataset['observations']
         print(self.obs.size)
-        #print(type(self.obs[0]))
-        self.QC = self.dataset['qc']
-        #print(type(self.QC[0]))
+        self.qc = self.dataset['qc']
 
-        self.my_types = np.unique(self.obs_type.values)
-        self.time_units = self.time.dtype
-        self.time_range = self.time.attrs['valid_range']
+        self.my_types = np.unique(self.obs_types.values)
+        self.time_units = self.times.dtype
+        self.time_range = self.times.attrs['valid_range']
         self.calendar = 'Gregorian' #don't know how to get other calendar types
         #missing some other time stuff
 
         #don't have the verbose section
 
-        '''
-        self.num_copies = self.dataset['copy'].size
-        
-        if copy_string.lower() == 'all':
-            self.my_type_ind = [i for i in range(0,self.num_copies)]
-        else:
-            #get_copy_index.m
-            copy_meta_data = self.dataset['CopyMetaData']
-            meta_data_length  = self.dataset['nlines'].size
-            copy_string_no_white = ''.join(self.copy_string.split())
-            copy_index = -1
-
-            #find matching copy
-            for i in range(0, self.num_copies):
-                meta_data_no_white = ''.join(bytes_to_string(self, copy_meta_data.values[i].split()))
-                if meta_data_no_white == copy_string_no_white:
-                    copy_index = i
-                    break
-
-            if copy_index < 0:
-                raise Exception('No matching copy found')
-
-            self.my_type_ind = copy_index
-        '''
-        
+        #only getting things that are the actual obs (not prior and posterior members)
         self.obs_ind = 0
+        self.obs = self.obs[:, self.obs_ind]
+        print(self.obs.size)
+        
+        self.lons = self.locs[:, 0]
+        self.lats = self.locs[:, 1]
+        self.z = self.locs[:, 2]
 
+        #first create a pandas DataFrame
+        
+        pd_array = pd.DataFrame({'obs_types' : self.obs_types.values,
+                                 'times' : self.times.values,
+                                 'lons' : self.lons.values,
+                                 'lats' : self.lats.values,
+                                 'z' : self.z.values,
+                                 'vert_types' : self.vert_types.values,
+                                 'qc_DATA' : self.qc[:, 0].values,
+                                 'qc_DART' : self.qc[:, 1].values,
+                                 'obs' : self.obs.values
+                                 })
 
-        #this may be incorrect. it will currently be an inds by my_type_ind array.
-        #similar concerns for subsequent assignments
-        #print(self.inds, self.obs_ind)
-        self.my_obs = self.obs[:, self.obs_ind]
-        print(self.my_obs.size)
-        self.my_locs = self.location
-        self.my_keys = self.obs_keys
-        self.my_vert_types = self.vert_type
-        self.my_times = self.time
+        #use set_index to create a MultiIndex so I can access fields that xarray wouldn't normally
+        #treat as accessible fields
 
         
-        self.my_lons = self.my_locs[:, 0]
-        self.my_lats = self.my_locs[:, 1]
-        self.my_z = self.my_locs[:, 2]
-        print('here')
-        '''
-        pd_array = pd.DataFrame({'obs' : self.my_obs.values,
-                                 'keys' : self.my_keys.values,
-                                 'lons' : self.my_lons.values,
-                                 'lats' : self.my_lats.values,
-                                 'z' : self.my_z.values,
-                                 'times' : self.my_times.values})'''
-
-
-        #index = pd.MultiIndex.from_tuples(tuples, names = ['times', 'lons', 'lats', 'z', 'obs', 'keys'])
-        #print(index)
-        index = pd.DataFrame
-        pd_array = pd.DataFrame({'obs' : self.my_obs.values,
-                                 'keys' : self.my_keys.values,
-                                 'lons' : self.my_lons.values,
-                                 'lats' : self.my_lats.values,
-                                 'z' : self.my_z.values,
-                                 'times' : self.my_times.values})
-        pd_array.set_index(['times', 'lons', 'lats', 'z'], inplace = True)
+        pd_array.set_index(['obs_types', 'times', 'lons', 'lats', 'z',
+                            'qc_DATA', 'qc_DART', 'vert_types'], inplace = True)
         pd_array.sort_index(inplace = True)
         pd_array.reset_index()
-        #print(pd_array.index)
-        #print(pd_array)
-        xa_array = xa.DataArray(pd_array)
-        #print(self.my_obs.expand_dims('lons', self.my_lons.values))
-        #print(xa_array)
-        xa_array.unstack('dim_0')
-        print(xa_array)
-        print('here')
-        '''xa_set = xa.Dataset({'obs' : self.my_obs,
-                                 'lons' : self.my_lons,
-                                 'lats' : self.my_lats,
-                                 'z' : self.my_z,
-                                 'times' : self.my_times})'''
-        print('here')
-        #xa_array_grouped = xa_set.groupby('times')
-        #pd_array_grouped = pd_array.groupby('times').groupby('lons')
-        #print('here')
-        #pd_array_final = pd_array_grouped
-        #print(type(pd_array_final))
-        #print(pd_array_final.groups)
-        #print(np.array([self.my_times, [self.my_lons, [self.my_lats, [self.my_z, [self.my_obs, [self.my_keys]]]]]]))
-        #print(xa.DataArray(pd_array_final))
-        
-        #self.data = xa.DataArray(self.my_obs, zip(
-        
 
-        #print(np.stack(np.array([self.lons, self.obs]), axis = 0).shape)
-        #self.data=np.array([self.lats, self.lons, self.z, self.time, self.]).transpose()
-        #self.data = np.array([self.my_times, self.my_lons, self.my_lats, self.my_z, self.my_obs])
+        
+        
+        ''' Function guideline for if I ever want to create a proper dimensional xarray DataArray
+        
+        test_array = np.column_stack((np.array(self.lons.values, columns = ['lons']),
+        np.array(self.lats.values, columns = ['lats']),
+        np.array(self.obs.values, columns = ['obs'])))
+        
+        def map(array):
+            keys, values = array.sort_values('lons').values.T
+            ukeys, index = np.unique(keys, True)
+            arrays = np.split(values, index[1:])
+            array2 = pd.DataFrame({'lons' : ukeys, 'obs' : [list(a) for a in arrays]})
+            return array2
 
-        quit()
-        #print(np.unique(self.lons).size, np.unique(self.lats).size, np.unique(self.time).size, np.unique(self.z).size, np.unique(self.obs).size)
-        #print(self.data.shape)
+        def map_advanced(array):
+            return None
         
-        #print(self.obs.shape, self.lons.shape, self.lats.shape, self.z.shape, self.keys.shape, self.time.shape)
-        #print(self.lons.flatten().shape, self.lats.flatten(), self.z.flatten(), self.keys.flatten(), self.time.flatten())
-        #Create an xarray DataArray to hold everything. Will need to account for multiple ob types later
-        #by instead making a Dataset
+        
+        print(map(pd_array))
+        '''
 
-        self.data = xa.DataArray(self.obs, coords =
-                                 {'lon': self.lons, 'lat': self.lats, 'vert': self.z,
-                                   'key' : self.keys, 'time': self.time})
-                                 #attrs = {'vert_units': self.vert_units,'vert_pos_dir' : self.vert_pos_dir}) 
-                                                     
         
-    def plot(self):
-        p = None
+        #Convert to an xarray DataArray
+        self.data = xa.DataArray(pd_array)
+        print(self.data)
+
+        #demonstration of how to properly use where
+        #a = self.data.where(self.data.lats > 80)
+        #print(self.data.where(self.data.lats > 80, drop = True))
+        #b = self.data.where(self.data.lats > 80, drop = True)
+        #print(b = b.where(b.lats < 81, drop = True))
+
         
-        ''' obs_type_string, region, copy_string, QC_string, max_QC
+        
+    def filter_range(self, conditions):
+        '''Take list of tuples of form ('category_name', min, max) and return lons, lats, and
+        observation values satisfying these conditions'''
+
+        data = self.data
+
+        cat_dict = {
+            
+            'obs_types' : data.obs_types,
+            'times' : data.times,
+            'lons' : data.lons,
+            'lats' : data.lats,
+            'z' : data.z,
+            'qc_DATA' : data.qc_DATA,
+            'qc_DART' : data.qc_DART,
+            'vert_types' : data.vert_types
+            
+        }
+        
+        for (category_name, min, max) in conditions:
+            
+            category = cat_dict[category_name]
+            
+            if min != max:
+                if min < max:
+                    data = data.where(category >= min)
+                    data = data.where(category <= max)
+                    data = data.where(np.isnan(data) != True, drop = True)
+                else:
+                    #for wrapping data (particularly longitude)
+                    data = xa.concat([data.where(category >= min, drop = True),
+                                      data.where(category <= max, drop = True)], dim = 'dim_0')
+            else:
+                data = data.where(category == min, drop = True)
+
+        return data
+                           
+    def filter_disjoint(self, conditions):
+        '''Take list of tuples of form ('category_name', [values]) and return lons, lats, and
+        observation values satisfying these conditions'''
+
+        data = self.data
+
+        cat_dict = {
+            
+            'obs_types' : data.obs_types,
+            'times' : data.times,
+            'lons' : data.lons,
+            'lats' : data.lats,
+            'z' : data.z,
+            'qc_DATA' : data.qc_DATA,
+            'qc_DART' : data.qc_DART,
+            'vert_types' : data.vert_types
+            
+        }
+
+        data_building = data
+        
+        for (category_name, values) in conditions:
+            
+            category = cat_dict[category_name]
+
+            #this form may not work but maybe it will
+            
+            #data = data.where(category == values[, drop = True)
+
+            
+            #slower less pythonic version
+            data_building = data_building.where(category == values[0], drop = True)
+            i = 1
+            
+            while i < len(values):
+                
+                data_building = xa.concat([data_building, data.where(category == values[i], drop = True)], dim = 'dim_0')
+                i += 1
+                
+            data = data_building 
+        
+        print(data)
+        return data
+        
+    def plot(self, *args):
+        '''Each argument represents a range of values to be passed to filter. Any argument given
+        should be a tuple ('category_name', min, max) representing the desired coordinate range.
+        min and max are inclusive. List of valid arguments: obs_types, times, lons, lats, z,
+        qc_DATA, qc_DART, vert_types'''
+
+        print('at plot')
+        data = self.filter_disjoint(args)
+        print('at plot further')
+        ax = plt.axes(projection = ccrs.PlateCarree())
+        ax.stock_img()
+        ax.gridlines()
+        ax.coastlines()
+        plt.scatter(data.lons, data.lats, c = data.qc_DART, s = 100,
+                    marker = "+", transform = ccrs.PlateCarree())
+        plt.tight_layout()
+        plt.show()
+        
+'''
+plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
+#plotter.plot(('obs_types', 10, 20))                
+plotter.plot(('obs_types', [3, 4, 5, 6, 7, 8]))                
+'''
+
+
+
+''' CODE GRAVEYARD DO NOT ENTER 
+
+obs_type_string, region, copy_string, QC_string, max_QC
+#def __init__(self, file_path, obs_type_string, region, copy_string, QC_string, max_QC, verbose):   
         self.region = np.array(region) #e.g. [0, 360, -90, 90, -inf, inf] or [0, 360, -90, 90]
         
         'RADIOSONDE_TEMPERATURE',
@@ -222,6 +288,32 @@ class plot_2D_obs_initial:
         self.my_keys = self.obs_keys[self.inds].values
         self.my_vert_types = self.vert_type[self.inds].values
         self.my_times = self.time[self.inds].values
+
+        
+        self.num_copies = self.dataset['copy'].size
+        
+        if copy_string.lower() == 'all':
+            self.my_type_ind = [i for i in range(0,self.num_copies)]
+        else:
+            #get_copy_index.m
+            copy_meta_data = self.dataset['CopyMetaData']
+            meta_data_length  = self.dataset['nlines'].size
+            copy_string_no_white = ''.join(self.copy_string.split())
+            copy_index = -1
+
+            #find matching copy
+            for i in range(0, self.num_copies):
+                meta_data_no_white = ''.join(bytes_to_string(self, copy_meta_data.values[i].split()))
+                if meta_data_no_white == copy_string_no_white:
+                    copy_index = i
+                    break
+
+            if copy_index < 0:
+                raise Exception('No matching copy found')
+
+            self.my_type_ind = copy_index
+        
+        
 
         #find QC values for obs
 
@@ -307,12 +399,10 @@ class plot_2D_obs_initial:
                     cur_loc[2] >= z_min and cur_loc[2] <= z_max):
 
                     self.loc_inds.append(i)
-        '''            
-        '''
+        
         print(np.where(np.bitwise_and(self.my_locs[:, 1] > -40, self.my_locs [:, 1] < 0,
                                       self.my_locs[:, 2] >= z_min, self.my_locs[:, 2] <= z_max))[0].size)
-        '''
-        '''
+        
         for i in range(self.mylocs[:, 0].size):
             if (x_min == x_max):
                 
@@ -329,9 +419,8 @@ class plot_2D_obs_initial:
                 self.loc_inds = np.where((self.my_locs[:, 0] >=x_min and self.my_locs[:, 0] <= x_max) and
                                          self.my_locs[:, 1] >= y_min and self.my_locs[:, 1] <= y_max and
                                          self.my_locs[:, 2] >= z_min and self.my_locs[:, 2] <= z_max)        
-        '''
         
-        '''        
+
         print(self.my_locs[:, 0].size)
         print(self.my_locs[:, 0])
         print(np.where((self.my_locs[:, 1] >= y_min)) - (self.my_locs[:, 1] <= y_max).all().size)
@@ -348,9 +437,7 @@ class plot_2D_obs_initial:
                 self.loc_inds = np.where((self.my_locs[:, 0] >=x_min and self.my_locs[:, 0] <= x_max) and
                                          self.my_locs[:, 1] >= y_min and self.my_locs[:, 1] <= y_max and
                                          self.my_locs[:, 2] >= z_min and self.my_locs[:, 2] <= z_max)
-        '''
 
-        '''
         self.loc_inds = np.array(self.loc_inds)
         self.num_obs = self.loc_inds.size
         self.lons = self.my_locs[self.loc_inds, 0]
@@ -394,9 +481,5 @@ class plot_2D_obs_initial:
         #print(self.vert_pos_dir, self.vert_units)
         #print(self.z)
 
-        '''
+'''
         
-plotter = plot_2D_obs_initial('../obs_series/obs_epoch_001.nc')
-                
-
-#def __init__(self, file_path, obs_type_string, region, copy_string, QC_string, max_QC, verbose):   
