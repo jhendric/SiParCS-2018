@@ -184,15 +184,32 @@ class ReadDiag:
 
             
             ax.scatter(x = forecast_region.time.values, y = forecast_region.values,
-                       edgecolors = 'black', marker = 'x', s = 25)
-            ax.plot(forecast_region.time.values, forecast_region.values.flatten(), 'kx-')
+                       edgecolors = 'black', marker = 'x', s = 15)
+            ax.plot(forecast_region.time.values, forecast_region.values.flatten(), 'kx-', label = 'forecast')
             ax.scatter(x = analysis_region.time.values, y = analysis_region.values,
-                       edgecolors = 'red', marker = 'o', s = 25, facecolors = 'none')
-            ax.plot(analysis_region.time.values, analysis_region.values.flatten(), 'ro-', mfc = 'none')
+                       edgecolors = 'red', marker = 'o', s = 15, facecolors = 'none')
+            ax.plot(analysis_region.time.values, analysis_region.values.flatten(), 'ro-', mfc = 'none', label = 'analysis')
 
-            ax.set_xlim(forecast_region.time.values[0].astype("M8[ms]"),
-                         forecast_region.time.values[forecast_region.time.values.size - 1].astype("M8[ms]"))
+            #set min and max x limits to be wider than actual limits for a nicer plot
+            #pad x axis by 10% on both sides
+            pad_x_axis = .10 * (max(forecast_region.time.values) - min(forecast_region.time.values))
+            ax.set_xlim((forecast_region.time.values[0] - pad_x_axis).astype("M8[ms]"),
+                        (forecast_region.time.values[-1] + pad_x_axis).astype("M8[ms]"))
+            
+            print(ax.get_xticks())
+            #pad y axis by 20% at top
+            y_max = max(np.nanmax(forecast_region.values.flatten()), np.nanmax(analysis_region.values.flatten()))
+            y_max = y_max + .20 * y_max
+            ax.set_ylim(0, y_max)
 
+            #add horizontal and vertical lines
+            for i in range(1, int(y_max)):
+                ax.axhline(y = i, ls = ':')
+
+            for time in ax.get_xticks():
+                ax.axvline(x = time, ls = ':')
+
+            
             #subplot title
             print('forecast: ', forecast_region.values.flatten())
             print('forecast mean: ', np.nanmean(forecast_region.values.flatten()))
@@ -200,29 +217,30 @@ class ReadDiag:
                      'forecast: mean = ' + str(np.nanmean(forecast_region.values.flatten())) + '     ' +
                      'analysis: mean = ' + str(np.nanmean(analysis_region.values.flatten())))
             
-            y_max = max(np.nanmax(forecast_region.values.flatten()), np.nanmax(analysis_region.values.flatten()))
             
-            ax.set_ylim(0, y_max)
             ax.set_ylabel(str(self.bytes_to_string(dataset['region_names'].values[index])) + '\n' + 'rmse')
+            ax.legend(loc = 'upper left', framealpha = 0.25)
             
-            #add horizontal and vertical lines
-            for i in range(1, int(y_max)):
-                ax.axhline(y = i, ls = ':')
-
-            for time in ax.get_xticks():
-                ax.axvline(x = time, ls = ':')
             
             #need to basically plot two plots on top of each other to get 2 y scales
             ax_twin = ax.twinx()
             ax_twin.scatter(x = possible_obs_region.time.values, y = possible_obs_region.values,
-                            color = 'blue', marker = 'o', s = 25, facecolors = 'none')
+                            color = 'blue', marker = 'o', s = 15, facecolors = 'none')
             ax_twin.scatter(x = used_obs_region.time.values, y = used_obs_region.values,
-                            color = 'blue', marker = 'x', s = 25)
+                            color = 'blue', marker = 'x', s = 15)
             '''
             print('possible obs: ', possible_obs_region.values.flatten())
             print('used obs: ', used_obs_region.values.flatten())
             print('difference in obs: ', possible_obs_region.values.flatten()-used_obs_region.values.flatten())'''
-            ax_twin.set_ylim(0, max(max(possible_obs_region.values), max(used_obs_region.values)) + 10)
+
+            y_max = max(max(possible_obs_region.values), max(used_obs_region.values))
+            y_max = y_max + .20 * y_max
+            
+            ax_twin.set_ylim(0, y_max)
+            ax_twin.set_ylabel('# of obs: o = poss, x = used', color = 'blue')
+            
+            
+            
             
             #possible_obs_region.scatter
 
