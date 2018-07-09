@@ -137,7 +137,6 @@ class ReadDiag:
         for coord in forecast.coords:
             #get coordinate type
             if coord.lower() in ('plevel', 'hlevel', 'surface'):
-
                 level_type = coord
                 break
             
