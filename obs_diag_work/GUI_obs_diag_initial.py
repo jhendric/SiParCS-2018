@@ -172,8 +172,8 @@ class GUIObsDiagInitial:
         #event arg is passed by menu events
         print('plotting')
         print('currently selected ob type: ', self.obs_menu.curselection())
-
-        level = np.int64(self.level_menu.get(self.level_menu.curselection()))
+        print(self.level_menu.get(self.level_menu.curselection()))
+        level = np.int64(float(self.level_menu.get(self.level_menu.curselection())))
         obs_type = self.obs_menu.get(self.obs_menu.curselection())
         print('level: ', level)
         print('obs type: ', obs_type)
@@ -211,25 +211,43 @@ class GUIObsDiagInitial:
         for index, ax in enumerate((ax1, ax2, ax3)):
 
             forecast_region = forecast.where(forecast.region == index + 1, drop = True)
+            #forecast_region = forecast_region[~np.isnan(forecast_region)]
             analysis_region = analysis.where(analysis.region == index + 1, drop = True)
+            #analysis_region = analysis_region[~np.isnan(analysis_region)]
             possible_obs_region = possible_obs.where(possible_obs.region == index + 1, drop = True)
+            #possible_obs_region = possible_obs_region[~np.isnan(possible_obs_region)]
             used_obs_region = used_obs.where(used_obs.region == index + 1, drop = True)
+            #used_obs_region = used_obs_region[~np.isnan(used_obs_region)]
             #print('forecast region: ', forecast_region)
             #print('analysis region: ', analysis_region)
             #plot both scatter and line for forecast and analysis to achieve connected appearance
-            
-            ax.scatter(x = forecast_region.time.values, y = forecast_region.values,
+            #print(forecast_region.time.values.size)
+            #print(forecast_region.values)
+            #print(forecast_region.values.size)
+            #print(~np.isnan(forecast_region.values).size)
+            #print(np.logical_not(np.isnan(forecast_region.values)).size)
+            #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
+            forecast_no_nans = np.array(list(filter(lambda v: v == v, forecast_region.values)))
+            end = forecast_no_nans.size
+            forecast_times_no_nans = forecast_region.time.values[:end]
+            analysis_no_nans = np.array(list(filter(lambda v: v == v, forecast_region.values)))
+            analysis_times_no_nans = analysis_region.time.values[:end]
+            #print(forecast_region.time.values[:test.size].size)
+            ax.scatter(x = forecast_times_no_nans, y = forecast_no_nans,
                        edgecolors = 'black', marker = 'x', s = 15)
-            ax.plot(forecast_region.time.values, forecast_region.values.flatten(), 'kx-', label = 'forecast')
-            ax.scatter(x = analysis_region.time.values, y = analysis_region.values,
+            ax.plot(forecast_times_no_nans,
+                    forecast_no_nans.flatten(), 'kx-', label = 'forecast')
+            ax.scatter(x = analysis_times_no_nans,
+                       y = analysis_no_nans,
                        edgecolors = 'red', marker = 'o', s = 15, facecolors = 'none')
-            ax.plot(analysis_region.time.values, analysis_region.values.flatten(), 'ro-', mfc = 'none', label = 'analysis')
+            ax.plot(analysis_times_no_nans,
+                    analysis_no_nans.flatten(), 'ro-', mfc = 'none', label = 'analysis')
 
             #set min and max x limits to be wider than actual limits for a nicer plot
             #pad x axis by 10% on both sides
             pad_x_axis = .10 * (max(forecast_region.time.values) - min(forecast_region.time.values))
             ax.set_xlim((forecast_region.time.values[0] - pad_x_axis).astype("M8[ms]"),
-                        (forecast_region.time.values[-1] + pad_x_axis).astype("M8[ms]"))
+                        (forecast_region.time.values[end-1] + pad_x_axis).astype("M8[ms]"))
             
             print(ax.get_xticks())
             #pad y axis by 20% at top
@@ -248,20 +266,20 @@ class GUIObsDiagInitial:
             #subplot title
             print('forecast: ', forecast_region.values.flatten())
             print('forecast mean: ', np.nanmean(forecast_region.values.flatten()))
-            ax.set_title(str(self.bytes_to_string(dataset['region_names'].values[index])) + '     ' +
+            ax.set_title(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '     ' +
                      'forecast: mean = ' + str(np.nanmean(forecast_region.values.flatten())) + '     ' +
                      'analysis: mean = ' + str(np.nanmean(analysis_region.values.flatten())))
             
             
-            ax.set_ylabel(str(self.bytes_to_string(dataset['region_names'].values[index])) + '\n' + 'rmse')
+            ax.set_ylabel(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '\n' + 'rmse')
             ax.legend(loc = 'upper left', framealpha = 0.25)
             
             
             #need to basically plot two plots on top of each other to get 2 y scales
             ax_twin = ax.twinx()
-            ax_twin.scatter(x = possible_obs_region.time.values, y = possible_obs_region.values,
+            ax_twin.scatter(x = possible_obs_region.time.values[:end], y = possible_obs_region.values[:end],
                             color = 'blue', marker = 'o', s = 15, facecolors = 'none')
-            ax_twin.scatter(x = used_obs_region.time.values, y = used_obs_region.values,
+            ax_twin.scatter(x = used_obs_region.time.values[:end], y = used_obs_region.values[:end],
                             color = 'blue', marker = 'x', s = 15)
             '''
             print('possible obs: ', possible_obs_region.values.flatten())
