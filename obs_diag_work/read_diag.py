@@ -61,7 +61,7 @@ class ReadDiag:
             if category_name != 'copy':
 
                 if type(category.values[0]) == np.dtype('float64'):
-                    data = data.where(abs(category - value) < 1e-8, drop = True)
+                    data = data.where(abs(category - value) < 1e-4, drop = True)
                 else:
                     data = data.where(category == value, drop = True)
                 
@@ -161,7 +161,7 @@ class ReadDiag:
         #create 4 subplots
         #need to modularize this and function parameters to allow different numbers of plots
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize = (8,8))
-
+        
         for index, ax in enumerate((ax1, ax2, ax3)):
 
             forecast_region = forecast.where(forecast.region == index + 1, drop = True)
@@ -259,7 +259,8 @@ def main():
     #print(data)
     #data = reader.filter_single(data, ('region', 2))
     #data = reader.filter_single(data, ('copy', 'rmse'))
-    reader.plot_evolution('RADIOSONDE_U_WIND_COMPONENT', 925.0, reader.full_data)
+    #reader.plot_evolution('RADIOSONDE_U_WIND_COMPONENT', 925.0, reader.full_data)
+    reader.plot_evolution('GPSRO_REFRACTIVITY', 315.0, reader.full_data)
     #reader.plot_evolution('RADIOSONDE_U_WIND_COMPONENT', 687.5, reader.full_data)
     #reader.plot_evolution('AIRCRAFT_TEMPERATURE', 400.0, reader.full_data)
 if __name__ == "__main__":

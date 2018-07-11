@@ -156,7 +156,8 @@ class GUIObsDiagInitial:
             #self.levels.set(value = np.unique(self.forecast[self.level_type].values))
             for level in np.unique(self.forecast[self.level_type].values):
                 #add warning for levels that are filled entirely with nan's
-                nanmean = np.nanmean(self.reader.filter_single(self.forecast, (self.level_type, level)))
+                forecast = self.reader.filter_single(self.forecast, (self.level_type, level))
+                nanmean = np.nanmean(self.reader.filter_single(forecast, ('copy', 'rmse')))
                 #a nan value will never equal any value, so if the mean outputs nan this will be false
                 print(level, nanmean, nanmean == nanmean)
                 if nanmean != nanmean:
@@ -243,9 +244,17 @@ class GUIObsDiagInitial:
             forecast_times_no_nans = forecast_region.time.values[:end]
             analysis_no_nans = np.array(list(filter(lambda v: v == v, analysis_region.values)))
             analysis_times_no_nans = analysis_region.time.values[:end]
-
+            print(forecast_no_nans.size)
             print('forecast cleaned of nans: ', forecast_no_nans)
             print('analysis cleaned of nans: ', analysis_no_nans)
+            #do not plot regions with no values
+            if forecast_no_nans.size == 0:
+                ax.text(0.5, 0.5, 'No valid rmse data in this region')
+                ax.set_title(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '     ' +
+                     'forecast: mean = ' + str(np.nanmean(forecast_region.values.flatten())) + '     ' +
+                     'analysis: mean = ' + str(np.nanmean(analysis_region.values.flatten())))
+                continue
+            
             #plot both scatter and line for forecast and analysis to achieve connected appearance
             ax.scatter(x = forecast_times_no_nans, y = forecast_no_nans,
                        edgecolors = 'black', marker = 'x', s = 15)
