@@ -292,8 +292,8 @@ class GUIObsDiagInitial:
             print('analysis: ', analysis_region.values.flatten())
             print('analysis mean: ', np.nanmean(analysis_region.values.flatten()))            
             ax.set_title(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '     ' +
-                     'forecast: mean = ' + str(np.nanmean(forecast_region.values.flatten())) + '     ' +
-                     'analysis: mean = ' + str(np.nanmean(analysis_region.values.flatten())))
+                     'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
+                         'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
             
             
             ax.set_ylabel(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '\n' + 'rmse')
@@ -319,8 +319,8 @@ class GUIObsDiagInitial:
             
 
         #need to add plot title and spacing adjustments
-
-
+        fig.suptitle(str(obs_type) + ' @ ' + str(level))
+        fig.subplots_adjust(hspace = 0.8)
 
 root = Tk()
 widg = GUIObsDiagInitial(root, 0, 0)
