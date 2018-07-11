@@ -48,7 +48,7 @@ class GUIObsDiagInitial:
 
         obs_types = [name for name in list(self.original_data.attrs)[start_index:]]
 
-        #strip potential useless characters from strign interpretation of obs types
+        #strip potential useless characters from string interpretation of obs types
 
         obs_types_sparse = [name.replace('[', '').replace(']', '').
                             replace(',', '').replace('\'', '')
@@ -145,12 +145,24 @@ class GUIObsDiagInitial:
 
             for coord in self.forecast.coords:
                 #get coordinate type
+                print(coord)
                 if coord.lower() in ('plevel', 'hlevel', 'surface'):
                     self.level_type = coord
                     break
 
-            self.levels.set(value = np.unique(self.forecast[self.level_type].values))
-            
+            #surface may not show up in coords because it has no dimensions, so this is a workaround
+            if self.level_type == None:
+                self.level_type = 'surface'
+            #self.levels.set(value = np.unique(self.forecast[self.level_type].values))
+            for level in np.unique(self.forecast[self.level_type].values):
+                #add warning for levels that are filled entirely with nan's
+                nanmean = np.nanmean(self.reader.filter_single(self.forecast, (self.level_type, level)))
+                #a nan value will never equal any value, so if the mean outputs nan this will be false
+                print(level, nanmean, nanmean == nanmean)
+                if nanmean != nanmean:
+                    menu.insert(END, str(level) + ': No data found for this level, will not plot')
+                else:
+                    menu.insert(END, level)
         #should work in class scope since menu is a self variable
         if (menu.get(0) == '['):
             menu.delete('0')
@@ -173,12 +185,15 @@ class GUIObsDiagInitial:
         print('plotting')
         print('currently selected ob type: ', self.obs_menu.curselection())
         print(self.level_menu.get(self.level_menu.curselection()))
-        level = np.int64(float(self.level_menu.get(self.level_menu.curselection())))
+        level = np.float64(float(self.level_menu.get(self.level_menu.curselection()).split(':')[0]))
         obs_type = self.obs_menu.get(self.obs_menu.curselection())
         print('level: ', level)
         print('obs type: ', obs_type)
+        print('level type: ', self.level_type)
         
-        
+        print('forecast before level filtering: ', self.forecast)
+        print('analysis before level filtering: ', self.analysis)
+        #print('forecast test: ', self.forecast.where(self.forecast.plevel == 687.5))
         forecast = self.reader.filter_single(self.forecast, (self.level_type, level))
         analysis = self.reader.filter_single(self.analysis, (self.level_type, level))
         
@@ -208,6 +223,10 @@ class GUIObsDiagInitial:
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
 
+        print('region 1 mean: ', np.nanmean(forecast.where(forecast.region == 1, drop = True)))
+        print('region 2 mean: ', np.nanmean(forecast.where(forecast.region == 2, drop = True)))
+        print('region 3 mean: ', np.nanmean(forecast.where(forecast.region == 3, drop = True)))
+        
         for index, ax in enumerate((ax1, ax2, ax3)):
 
             forecast_region = forecast.where(forecast.region == index + 1, drop = True)
@@ -218,13 +237,15 @@ class GUIObsDiagInitial:
             #print('forecast region: ', forecast_region)
             #print('analysis region: ', analysis_region)
             #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
-            
+            print('forecast region with nans: ', forecast_region.values)
             forecast_no_nans = np.array(list(filter(lambda v: v == v, forecast_region.values)))
             end = forecast_no_nans.size
             forecast_times_no_nans = forecast_region.time.values[:end]
             analysis_no_nans = np.array(list(filter(lambda v: v == v, analysis_region.values)))
             analysis_times_no_nans = analysis_region.time.values[:end]
-            
+
+            print('forecast cleaned of nans: ', forecast_no_nans)
+            print('analysis cleaned of nans: ', analysis_no_nans)
             #plot both scatter and line for forecast and analysis to achieve connected appearance
             ax.scatter(x = forecast_times_no_nans, y = forecast_no_nans,
                        edgecolors = 'black', marker = 'x', s = 15)
