@@ -138,7 +138,7 @@ class GUIObsDiagInitial:
             self.forecast = self.reader.get_variable(self.obs_menu.get(self.obs_menu.curselection()),
                                             'time series', 'forecast', self.original_data)
             self.analysis = self.reader.get_variable(self.obs_menu.get(self.obs_menu.curselection()),
-                                                     'time series', 'forecast', self.original_data)
+                                                     'time series', 'analysis', self.original_data)
             #find whether level types are plevel, hlevel, or surface
 
             self.level_type = None
@@ -211,28 +211,21 @@ class GUIObsDiagInitial:
         for index, ax in enumerate((ax1, ax2, ax3)):
 
             forecast_region = forecast.where(forecast.region == index + 1, drop = True)
-            #forecast_region = forecast_region[~np.isnan(forecast_region)]
             analysis_region = analysis.where(analysis.region == index + 1, drop = True)
-            #analysis_region = analysis_region[~np.isnan(analysis_region)]
             possible_obs_region = possible_obs.where(possible_obs.region == index + 1, drop = True)
-            #possible_obs_region = possible_obs_region[~np.isnan(possible_obs_region)]
             used_obs_region = used_obs.where(used_obs.region == index + 1, drop = True)
-            #used_obs_region = used_obs_region[~np.isnan(used_obs_region)]
+            
             #print('forecast region: ', forecast_region)
             #print('analysis region: ', analysis_region)
-            #plot both scatter and line for forecast and analysis to achieve connected appearance
-            #print(forecast_region.time.values.size)
-            #print(forecast_region.values)
-            #print(forecast_region.values.size)
-            #print(~np.isnan(forecast_region.values).size)
-            #print(np.logical_not(np.isnan(forecast_region.values)).size)
             #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
+            
             forecast_no_nans = np.array(list(filter(lambda v: v == v, forecast_region.values)))
             end = forecast_no_nans.size
             forecast_times_no_nans = forecast_region.time.values[:end]
-            analysis_no_nans = np.array(list(filter(lambda v: v == v, forecast_region.values)))
+            analysis_no_nans = np.array(list(filter(lambda v: v == v, analysis_region.values)))
             analysis_times_no_nans = analysis_region.time.values[:end]
-            #print(forecast_region.time.values[:test.size].size)
+            
+            #plot both scatter and line for forecast and analysis to achieve connected appearance
             ax.scatter(x = forecast_times_no_nans, y = forecast_no_nans,
                        edgecolors = 'black', marker = 'x', s = 15)
             ax.plot(forecast_times_no_nans,
@@ -266,6 +259,8 @@ class GUIObsDiagInitial:
             #subplot title
             print('forecast: ', forecast_region.values.flatten())
             print('forecast mean: ', np.nanmean(forecast_region.values.flatten()))
+            print('analysis: ', analysis_region.values.flatten())
+            print('analysis mean: ', np.nanmean(analysis_region.values.flatten()))            
             ax.set_title(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '     ' +
                      'forecast: mean = ' + str(np.nanmean(forecast_region.values.flatten())) + '     ' +
                      'analysis: mean = ' + str(np.nanmean(analysis_region.values.flatten())))
