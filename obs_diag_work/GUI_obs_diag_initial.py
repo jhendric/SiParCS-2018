@@ -9,6 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 import numpy as np
 import pandas as pd
@@ -17,6 +18,7 @@ from read_diag import ReadDiag
 np.set_printoptions(threshold = np.nan) #without this setting, self.levels will be incomplete
 import time
 import itertools
+from datetime import datetime
 
 '''
 
@@ -65,6 +67,7 @@ class GUIObsDiagInitial:
         self.obs_type_dict = {obs_type : index for obs_type, index in
                               zip(obs_types_sparse, list(self.original_data.attrs.values())[start_index])}'''
         
+
         #GUI config
 
         #observation selection
@@ -277,8 +280,10 @@ class GUIObsDiagInitial:
             #set min and max x limits to be wider than actual limits for a nicer plot
             #pad x axis by 10% on both sides
             pad_x_axis = .10 * (max(forecast_region.time.values) - min(forecast_region.time.values))
-            ax.set_xlim((forecast_times_no_nans[0] - pad_x_axis).astype("M8[ms]"),
+            ax.set_xlim(((forecast_times_no_nans[0] - pad_x_axis).astype("M8[ms]")),
                         (forecast_times_no_nans[-1] + pad_x_axis).astype("M8[ms]"))
+            #ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%t'))
+            #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%m/%d/%t'))
             
             print(ax.get_xticks())
             #pad y axis by 20% at top
@@ -324,12 +329,16 @@ class GUIObsDiagInitial:
             
             ax_twin.set_ylim(0, y_max)
             ax_twin.set_ylabel('# of obs: o = poss, x = used', color = 'blue')
+            #ax.fmt_xdata = mdates.DateFormatter('%m/%d')
+            #ax.autofmt_xdate()
+            for tick in ax.get_xticklabels():
+                tick.set_rotation(45)
+            ax.tick_params(labelsize = 8)
             
-
         #need to add plot title and spacing adjustments
         fig.suptitle(str(obs_type) + ' @ ' + str(level))
         fig.subplots_adjust(hspace = 0.8)
-
+        
 root = Tk()
 widg = GUIObsDiagInitial(root, 0, 0)
 widg.plot()

@@ -94,7 +94,7 @@ class ReadDiag:
             if category_name != 'copy':
 
                 if type(category.values[0]) == np.dtype('float64') or type(category.values[0]) == np.dtype('float32'):
-                    #rounding to prevent flaot comparison mistakes
+                    #rounding to prevent float comparison mistakes
                     print('FLOAT')
                     mask = np.isin(np.around(category.values, 1), np.around(values, 1))
 
