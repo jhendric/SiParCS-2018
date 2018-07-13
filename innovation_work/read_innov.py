@@ -20,10 +20,10 @@ class GenerateInnov:
         '''get difference between self.initial and self.final for var_name
         at level in category level_name of the datasets'''
 
-        innov_initial = self.final[var_name]-self.initial[var_name]
-        innov_final = innov_initial.where(innov_initial[level_name] == level, drop = True)
+        innov_broad = self.final[var_name]-self.initial[var_name]
+        innov_narrow = innov_broad.where(innov_broad[level_name] == level, drop = True)
 
-        return innov_final
+        return innov_narrow
         
     def plot(self, innov):
         
