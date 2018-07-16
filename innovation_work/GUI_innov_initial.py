@@ -186,19 +186,31 @@ class GUIInnov:
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
-
+        
         var_name = self.data_menu.get(self.data_menu.curselection())
         if self.level_menu.get(self.level_menu.curselection()).split(':')[0] == 'N/A':
             #don't try and index by level if no levels actually exist for that variable type
+            self.final_var = self.final[var_name]
+            self.initial_var = self.initial[var_name]
             self.innov = self.final_var - self.initial_var
+            print(self.innov)
+            print(np.mean(self.innov.values))
             #ax.set_title('Innovation for ' + var_name)
             #ax.set_ytitle('Difference between final and initial ' + var_name)
         else:
+            #get current level
             level = np.float64(float(self.level_menu.get(self.level_menu.curselection()).split(':')[0]))
+            print('level: ', level)
+            #narrow down data to correct data variable, correct level
             self.innov = self.gen.diff(var_name, level, self.level_type)
+            print(self.innov)
+            print(np.mean(self.innov.values))
             #ax.set_title('Innovation for ' + var_name +  ' @ ' + str(level))
             #ax.set_ytitle('Difference between final and initial ' + var_name + ' @ ' + str(level))
+            
         self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')
+        
+        
         ax.gridlines()
         ax.coastlines()
 
@@ -206,8 +218,8 @@ class GUIInnov:
 
 
 root = Tk()
-widg = GUIInnov(root, 0, 0, 'filter_input.0001.nc', 'filter_output.0001.nc')
-widg.plot()
+widg = GUIInnov(root, 0, 0, 'cam_input.0001.nc', 'cam_output.0001.nc')
+#widg.plot()
 print('on to mainloop')
 root.mainloop()
                                    

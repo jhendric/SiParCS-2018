@@ -21,8 +21,23 @@ class GenerateInnov:
         at level in category level_name of the datasets'''
 
         innov_broad = self.final[var_name]-self.initial[var_name]
-        innov_narrow = innov_broad.where(innov_broad[level_name] == level, drop = True)
+        
+        if type(level) is not np.float64:
+            innov_narrow = innov_broad.where(innov_broad[level_name] == level, drop = True)
+        else:
+            innov_narrow = innov_broad.where(abs(innov_broad[level_name] - level) < 1e-3, drop = True)
 
+        '''These plots are currently designed to work with files featuring data from only one time
+        If a time dimension exists, the time value for the first data point is chosen for making sure all plotted
+        data comes from a single time'''
+        if 'time' in innov_narrow.dims or 'time' in innov_narrow.coords:
+            innov_narrow = innov_narrow.where(innov_narrow.time == innov_narrow.time.values[0], drop = True)
+            #squeeze eliminates single valued dimensions, ensures xarray plotting works correctly later
+            #innov_narrow = innov_narrow.squeeze('time')
+            #innov_narrow = innov_narrow.drop([innov_narrow.time.values[0]], dim = 'time')
+            
+        #level_name will definitely be only 1 possible value and should be dropped from the dimensions (not needed?)
+        #innov_narrow = innov_narrow.squeeze(level_name)
         return innov_narrow
         
     def plot(self, innov):
