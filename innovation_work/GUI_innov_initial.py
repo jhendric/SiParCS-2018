@@ -214,7 +214,7 @@ class GUIInnov:
             #ax.set_ytitle('Difference between final and initial ' + var_name + ' @ ' + str(level))
         plt.title = 'test'
         
-        ax.gridlines()
+        ax.gridlines(draw_labels = True)
         ax.coastlines()
 
         #ax.set_title('test')
