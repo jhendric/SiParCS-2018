@@ -21,10 +21,19 @@ class GenerateInnov:
         at level in category level_name of the datasets'''
 
         innov_broad = self.final[var_name]-self.initial[var_name]
+
+        #transfer info from original files that xarray will automatically plot (axis labels, title are included here)
+        innov_broad.attrs = self.final[var_name].attrs
+
+        if 'long_name' in innov_broad.attrs:
+            innov_broad.attrs['long_name'] = 'Difference in ' + innov_broad.attrs['long_name']
+        
+        print('innov_broad: ', innov_broad)
         
         if type(level) is not np.float64:
             innov_narrow = innov_broad.where(innov_broad[level_name] == level, drop = True)
         else:
+            #avoid float equality issues by checking equality to within 3 decimal places
             innov_narrow = innov_broad.where(abs(innov_broad[level_name] - level) < 1e-3, drop = True)
 
         '''These plots are currently designed to work with files featuring data from only one time

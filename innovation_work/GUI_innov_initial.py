@@ -193,10 +193,14 @@ class GUIInnov:
             self.final_var = self.final[var_name]
             self.initial_var = self.initial[var_name]
             self.innov = self.final_var - self.initial_var
+            self.innov.attrs = self.final_var.attrs
+            if 'long_name' in self.innov.attrs:
+                self.innov.attrs['long_name'] = 'Difference in ' + self.innov.attrs['long_name']
             print(self.innov)
             print(np.mean(self.innov.values))
-            #ax.set_title('Innovation for ' + var_name)
+            self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')
             #ax.set_ytitle('Difference between final and initial ' + var_name)
+            ax.set_title('Innovation for ' + var_name)
         else:
             #get current level
             level = np.float64(float(self.level_menu.get(self.level_menu.curselection()).split(':')[0]))
@@ -205,15 +209,15 @@ class GUIInnov:
             self.innov = self.gen.diff(var_name, level, self.level_type)
             print(self.innov)
             print(np.mean(self.innov.values))
-            #ax.set_title('Innovation for ' + var_name +  ' @ ' + str(level))
+            self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')            
+            ax.set_title('Innovation for ' + var_name +  ' @ ' + str(level))
             #ax.set_ytitle('Difference between final and initial ' + var_name + ' @ ' + str(level))
-            
-        self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')
-        
+        plt.title = 'test'
         
         ax.gridlines()
         ax.coastlines()
 
+        #ax.set_title('test')
 
 
 
