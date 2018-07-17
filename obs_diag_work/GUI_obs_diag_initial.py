@@ -29,9 +29,9 @@ Uses read_diag.py for plotting obs diag info in a GUI
 
 class GUIObsDiagInitial:
 
-    def __init__(self, window, grid_col, grid_row):
+    def __init__(self, window, grid_col, grid_row, diag):
 
-        self.reader = ReadDiag('obs_diag_output.nc')
+        self.reader = ReadDiag(diag)
         self.original_data = self.reader.full_data
 
         self.window = window
@@ -338,10 +338,17 @@ class GUIObsDiagInitial:
         #need to add plot title and spacing adjustments
         fig.suptitle(str(obs_type) + ' @ ' + str(level))
         fig.subplots_adjust(hspace = 0.8)
-        
-root = Tk()
-widg = GUIObsDiagInitial(root, 0, 0)
-widg.plot()
-print('on to mainloop')
-root.mainloop()
+
+
+def main(diag):
+    
+    root = Tk()
+    widg = GUIObsDiagInitial(root, 0, 0, diag)
+    widg.plot()
+    print('on to mainloop')
+    root.mainloop()
+
+if __name__ == '__main__':
+    #only cmd line argument is obs diag file name
+    main(sys.argv[1])
         

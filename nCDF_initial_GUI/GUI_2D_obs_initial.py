@@ -32,9 +32,9 @@ class GUI_2D_obs_initial:
 
     
     
-    def __init__(self, window, grid_col, grid_row):
+    def __init__(self, window, grid_col, grid_row, obs_sequence):
         
-        self.plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
+        self.plotter = plot_2D_obs(obs_sequence)
         self.original_data = self.plotter.data
         #print('initial test: ', np.unique(self.plotter.data.where(
         #    self.plotter.data.obs_types == 5, drop = True).z.values))
@@ -366,13 +366,22 @@ class GUI_2D_obs_initial:
 
         s= ttk.Style()
         s.theme_use('clam')
+
+
+def main(obs_sequence):
+    
+    root = Tk()
+    widg = GUI_2D_obs_initial(root, 0, 0, obs_sequence)
+    widg.plot_2D()
+    print('on to mainloop')
+    root.style = ttk.Style()
+    print(root.style.theme_use())
+    root.style.theme_use('clam')
+    print(root.style.theme_use())
+    root.mainloop()
         
-root = Tk()       
-widg = GUI_2D_obs_initial(root, 0, 0)
-widg.plot_2D()
-print('on to mainloop')
-root.style = ttk.Style()
-print(root.style.theme_use())
-root.style.theme_use('clam')
-print(root.style.theme_use())
-root.mainloop()
+if __name__ == '__main__':
+    #only cmd line argument is obs sequence file name
+    main(sys.argv[1])
+
+

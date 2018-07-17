@@ -219,12 +219,18 @@ class GUIInnov:
 
         #ax.set_title('test')
 
+def main(initial, final):
+    
+    root = Tk()
+    widg = GUIInnov(root, 0, 0, initial, final)
+    #widg.plot()
+    print('on to mainloop')
+    root.mainloop()
+        
+if __name__ == '__main__':
+    #cmd line arguments are initial conditions file name and final conditions file name
+    main(sys.argv[1], sys.argv[2])
 
 
-root = Tk()
-widg = GUIInnov(root, 0, 0, 'cam_input.0001.nc', 'cam_output.0001.nc')
-#widg.plot()
-print('on to mainloop')
-root.mainloop()
                                    
         

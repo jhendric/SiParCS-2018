@@ -29,9 +29,9 @@ Uses read_diag.py for plotting obs diag info in a GUI
 
 class GUIVertProf:
 
-    def __init__(self, window, grid_col, grid_row):
+    def __init__(self, window, grid_col, grid_row, diag):
 
-        self.reader = ReadDiag('obs_diag_output.nc')
+        self.reader = ReadDiag(diag)
         self.original_data = self.reader.full_data
 
         self.window = window
@@ -286,10 +286,19 @@ class GUIVertProf:
                      'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
                      'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
         #fig.subplots_adjust(hspace = 0.8)
+
+
+def main(diag):
+    
+    root = Tk()
+    widg = GUIVertProf(root, 0, 0, diag)
+    #widg.plot()
+    print('on to mainloop')
+    root.mainloop()
         
-root = Tk()
-widg = GUIVertProf(root, 0, 0)
-#widg.plot()
-print('on to mainloop')
-root.mainloop()
+if __name__ == '__main__':
+    #only cmd line argument is obs diag file name
+    main(sys.argv[1])
+
+
         

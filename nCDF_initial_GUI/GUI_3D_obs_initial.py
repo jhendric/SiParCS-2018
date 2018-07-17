@@ -32,7 +32,7 @@ import itertools
 
 '''
 
-Incorporates plot_2D_obs_initial.py into a GUI with slider bars
+Incorporates plot_3D_obs_initial.py into a GUI with slider bars
 and drop down menus.
 
 '''
@@ -43,9 +43,9 @@ class GUI_3D_obs_initial:
 
     
     
-    def __init__(self, window, grid_col, grid_row):
+    def __init__(self, window, grid_col, grid_row, obs_sequence):
         
-        self.plotter = plot_2D_obs('../obs_series/obs_epoch_001.nc')
+        self.plotter = plot_2D_obs(obs_sequence)
         self.original_data = self.plotter.data
         
         print(np.unique(self.original_data.obs_types.values).size)
@@ -393,13 +393,22 @@ class GUI_3D_obs_initial:
 
         s= ttk.Style()
         s.theme_use('clam')
+
+
+def main(obs_sequence):
+    
+    root = Tk()
+    widg = GUI_3D_obs_initial(root, 0, 0, obs_sequence)
+    widg.plot_3D()
+    print('on to mainloop')
+    root.style = ttk.Style()
+    print(root.style.theme_use())
+    root.style.theme_use('clam')
+    print(root.style.theme_use())
+    root.mainloop()
         
-root = Tk()       
-widg = GUI_3D_obs_initial(root, 0, 0)
-widg.plot_3D()
-print('on to mainloop')
-root.style = ttk.Style()
-print(root.style.theme_use())
-root.style.theme_use('clam')
-print(root.style.theme_use())
-root.mainloop()
+if __name__ == '__main__':
+    #only cmd line argument is obs sequence file name
+    main(sys.argv[1])
+
+    
