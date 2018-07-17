@@ -48,13 +48,26 @@ class GUIVertProf:
         #'comment' marks the beginning of the list of observation type names
         start_index = list(self.original_data.attrs).index('comment') + 1
 
-        obs_types = [name for name in list(self.original_data.attrs)[start_index:]]
-
+        obs_types = [name for name in list(self.original_data.attrs)[start_index:]]                
+        
         #strip potential useless characters from string interpretation of obs types
 
         obs_types_sparse = [name.replace('[', '').replace(']', '').
                             replace(',', '').replace('\'', '')
                             for name in obs_types]
+
+        #remove obs types that don't actually have vertical profile data
+        i = 0
+        while i < len(obs_types_sparse):
+            print('here')
+            try:
+                self.original_data[obs_types_sparse[i] + '_VPguess']
+                i += 1
+            except KeyError:
+                print('error')
+                print(obs_types_sparse[i])
+                del obs_types_sparse[i]
+
 
         self.obs_type_names = StringVar(value = obs_types_sparse)
 
