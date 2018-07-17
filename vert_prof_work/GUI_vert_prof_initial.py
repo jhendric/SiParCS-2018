@@ -173,7 +173,7 @@ class GUIVertProf:
         #print('analysis region: ', analysis_region)
         #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
         print('forecast region with nans: ', forecast_region.values)
-        forecast_mask = np.array(list(filter(lambda v: v == v, forecast_region.values)))
+        forecast_mask = np.array(list(filter(lambda v: v == v, forecast_region.values.flatten())))
         forecast_mask = ~np.isnan(forecast_region.values)
         #print(forecast_no_nans.flatten())
         forecast_no_nans = forecast_region.values[forecast_mask]
@@ -235,12 +235,12 @@ class GUIVertProf:
         #print('forecast mean: ', np.nanmean(forecast_region.values.flatten()))
         #print('analysis: ', analysis_region.values.flatten())
         #print('analysis mean: ', np.nanmean(analysis_region.values.flatten()))            
-        ax.set_title(self.region_menu.get(self.region_menu.curselection()) + '     ' +
+        '''ax.set_title(self.region_menu.get(self.region_menu.curselection()) + '     ' +
                      'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
-                     'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
+                     'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))'''
 
 
-        ax.set_xlabel(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '\n' + 'rmse')
+        ax.set_xlabel(self.region_menu.get(self.region_menu.curselection()) + '\n' + 'rmse')
         ax.legend(loc = 'upper left', framealpha = 0.25)
 
 
@@ -255,7 +255,7 @@ class GUIVertProf:
         print('used obs: ', used_obs_region.values.flatten())
         print('difference in obs: ', possible_obs_region.values.flatten()-used_obs_region.values.flatten())'''
 
-        x_max = max(max(possible_obs.values), max(used_obs.values))
+        x_max = max(max(possible_obs.values.flatten()), max(used_obs.values.flatten()))
         x_max = x_max + .20 * x_max
 
         ax_twin.set_xlim(0, x_max)
@@ -267,9 +267,11 @@ class GUIVertProf:
         ax.tick_params(labelsize = 8)'''
             
         #need to add plot title and spacing adjustments
-        '''
-        fig.suptitle(str(obs_type) + ' @ ' + str(level))
-        fig.subplots_adjust(hspace = 0.8)'''
+        
+        fig.suptitle(str(obs_type) + '\n' + self.region_menu.get(self.region_menu.curselection()) + '     ' +
+                     'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
+                     'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
+        #fig.subplots_adjust(hspace = 0.8)
         
 root = Tk()
 widg = GUIVertProf(root, 0, 0)
