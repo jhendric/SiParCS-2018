@@ -132,8 +132,9 @@ class GUIVertProf:
                                             'vertical profile', 'analysis', self.original_data)
 
         #narrow to one region
-        forecast_region = self.reader.filter_single(forecast, ('region', self.region_menu.curselection()))
-        analysis_region = self.reader.filter_single(analysis, ('region', self.region_menu.curselection()))
+        print(type(self.region_menu.curselection()))
+        forecast_region = self.reader.filter_single(forecast, ('region', int(self.region_menu.curselection()[0]) + 1))
+        analysis_region = self.reader.filter_single(analysis, ('region', int(self.region_menu.curselection()[0]) + 1))
         
         print('forecast: ', forecast_region)
         print('analysis: ', analysis_region)
