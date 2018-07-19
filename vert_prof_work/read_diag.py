@@ -8,29 +8,49 @@ import math
 import time
 import datetime
 
-'''
 
-Reading and other non-plotting functionality for obs_diag files.
-
-'''
 
 class ReadDiag:
 
+    '''
+    
+    Reading and other non-plotting functionality for obs_diag files.
+    
+    '''
+    
     def __init__(self, file_path):
+
+        '''Initialize reader object with obs diag file opened in xarray
+
+        Keyword arguments:
+        file_path: path of obs_diag output netCDF file
+        
+        '''
         
         self.full_data = xa.open_dataset(file_path)
 
     def bytes_to_string(self, bytes):
+
+        '''Convert a byte string variable to a typical Python string format
+
+        Keyword arguments:
+        bytes: byte string to be decoded
+
+        '''
+
+
         return ''.join(bytes.decode('UTF-8').split())
                 
     def get_variable(self, variable_name, plot_type, data_type, dataset):
 
-        '''
-        Extract DataArray from larger dataset given parameters
+        '''Extract DataArray from larger dataset using given parameters
+
+        Keyword arguments:
         variable_name: name of variable e.g. AIRCRAFT_HORIZONTAL_WIND
         plot_type: time series or vertical profile
         data_type: forecast or analysis
         dataset: xarray Dataset to grab from
+
         '''
         
         plot_type_dict = {
@@ -49,6 +69,14 @@ class ReadDiag:
         return dataset[data_string]
 
     def filter_single(self, data_array, *args):
+
+        '''Filter an xarray DataArray using a single condition
+
+        Keyword arguments:
+        data_array: DataArray to be filtered
+        *args: set of tuples of form (coordinate name, value)
+        
+        '''
         
         data = data_array
 
@@ -83,6 +111,14 @@ class ReadDiag:
         return data
     
     def filter_multiple(self, data_array, *args):
+
+        '''Filter an xarray DataArray using multiple conditions
+
+        Keyword arguments:
+        data_array: DataArray to be filtered
+        *args: set of tuples of form (coordinate name, value)
+        
+        '''
         
         data = data_array
 
@@ -122,7 +158,14 @@ class ReadDiag:
         return data
     
     def plot_evolution(self, obs_type, level, dataset):
-        '''Replicate plot_evolution.m'''
+        '''Replicate plot_evolution.m. Not used in any GUI file
+        
+        Keyword arguments:
+        obs_type: observation type to be plotted
+        level: observation level to be plotted
+        dataset: xarray Dataset to grab data from
+
+        '''
 
         #get data of chosen variable
         forecast = self.get_variable(obs_type, 'time series', 'forecast', dataset)
@@ -250,19 +293,12 @@ class ReadDiag:
         plt.show()
     
 def main():
+
+    '''Initializes a reader and plots from test file'''
     
-    #reader = ReadDiag('../obs_series/obs_diag_output.nc')
-    #reader = ReadDiag('obs_diag_output_b_3inf.nc')
     reader = ReadDiag('obs_diag_output.nc')
-    #data = reader.get_variable('RADIOSONDE_U_WIND_COMPONENT', 'time series', 'forecast',
-    #                           reader.full_data)
-    #print(data)
-    #data = reader.filter_single(data, ('region', 2))
-    #data = reader.filter_single(data, ('copy', 'rmse'))
-    #reader.plot_evolution('RADIOSONDE_U_WIND_COMPONENT', 925.0, reader.full_data)
     reader.plot_evolution('GPSRO_REFRACTIVITY', 315.0, reader.full_data)
-    #reader.plot_evolution('RADIOSONDE_U_WIND_COMPONENT', 687.5, reader.full_data)
-    #reader.plot_evolution('AIRCRAFT_TEMPERATURE', 400.0, reader.full_data)
+
 if __name__ == "__main__":
     main()
             
