@@ -9,28 +9,31 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 
 import numpy as np
-import pandas as pd
-import math
 from read_diag import ReadDiag
-np.set_printoptions(threshold = np.nan) #without this setting, self.levels will be incomplete
-import time
-import itertools
-from datetime import datetime
-
-'''
-
-Uses read_diag.py for plotting obs diag info in a GUI
-
-'''
+np.set_printoptions(threshold = np.nan) #avoids incomplete StringVar declaration
 
 
 class GUIVertProf:
 
+    '''
+    
+    Uses read_diag.py for plotting obs diag info in a GUI
+    
+    '''
+    
     def __init__(self, window, grid_col, grid_row, diag):
-
+        
+        '''Initialize GUI with available observation types and regions.
+        
+        Keyword arguments:
+        window -- the root window holding all GUI elements
+        grid_col -- the column in the root window that will contain the main tkinter frame
+        grid_row -- the row in the root window that will contain the main tkinter frame
+        diag -- an obs_diag output netCDF file
+        
+        '''
         self.reader = ReadDiag(diag)
         self.original_data = self.reader.full_data
 
@@ -59,13 +62,11 @@ class GUIVertProf:
         #remove obs types that don't actually have vertical profile data
         i = 0
         while i < len(obs_types_sparse):
-            print('here')
             try:
+                #all obs types with VP data will have a corresponding data variable with this suffix
                 self.original_data[obs_types_sparse[i] + '_VPguess']
                 i += 1
             except KeyError:
-                print('error')
-                print(obs_types_sparse[i])
                 del obs_types_sparse[i]
 
 
@@ -82,12 +83,6 @@ class GUIVertProf:
         self.forecast = None
         self.analysis = None
         
-        '''
-        #dictionary of obs types to their indices (shouldn't need this since should just need the names)
-        self.obs_type_dict = {obs_type : index for obs_type, index in
-                              zip(obs_types_sparse, list(self.original_data.attrs.values())[start_index])}'''
-        
-
         #GUI config
 
         #observation selection
@@ -103,7 +98,6 @@ class GUIVertProf:
         
         self.obs_menu.selection_set(0)
         self.obs_menu.event_generate('<<ListboxSelect>>')
-        #print('size of obs box: ', self.obs_menu.size())
 
         #obs scrollbar
         self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
@@ -132,12 +126,18 @@ class GUIVertProf:
         self.plot_button.grid(column = 2, row = 5, sticky = "N, S, E, W")
         
     def plot(self, event = None):
-        #a = time.time()
+
+        '''Plot a vertical profile of rmse data given selected obs type and region
+        
+        Keyword arguments:
+        event -- an argument passed by any tkinter menu event. Has no influence on output but
+        tkinter requires it to be passed to any method called by a menu event.
+
+        '''
+        
         #event arg is passed by menu events
-        print('plotting')
-        print('currently selected ob type: ', self.obs_menu.curselection())
+
         obs_type = self.obs_menu.get(self.obs_menu.curselection())
-        print('obs type: ', obs_type)
 
         forecast = self.reader.get_variable(self.obs_menu.get(self.obs_menu.curselection()),
                                             'vertical profile', 'forecast', self.original_data)
@@ -145,7 +145,6 @@ class GUIVertProf:
                                             'vertical profile', 'analysis', self.original_data)
 
         #narrow to one region
-        print(type(self.region_menu.curselection()))
         forecast_region = self.reader.filter_single(forecast, ('region', int(self.region_menu.curselection()[0]) + 1))
         analysis_region = self.reader.filter_single(analysis, ('region', int(self.region_menu.curselection()[0]) + 1))
         
@@ -159,8 +158,6 @@ class GUIVertProf:
 
         forecast_region = self.reader.filter_single(forecast_region, ('copy', 'rmse'))
         analysis_region = self.reader.filter_single(analysis_region, ('copy', 'rmse'))
-        print('forecast filtered to rmse: ', forecast_region)
-        print('analysis filtered to rmse: ', analysis_region)
 
         #get level type
         level_type = None
@@ -182,27 +179,16 @@ class GUIVertProf:
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
         
-        
-        #print('forecast region: ', forecast_region)
-        #print('analysis region: ', analysis_region)
         #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
-        print('forecast region with nans: ', forecast_region.values)
+        
         forecast_mask = np.array(list(filter(lambda v: v == v, forecast_region.values.flatten())))
         forecast_mask = ~np.isnan(forecast_region.values)
-        #print(forecast_no_nans.flatten())
         forecast_no_nans = forecast_region.values[forecast_mask]
-        #print(forecast_mask.size, forecast_region.time.values.size)
         forecast_levels_no_nans = forecast_levels.values[forecast_mask.flatten()]
         analysis_mask = ~np.isnan(analysis_region.values)
         analysis_no_nans = analysis_region.values[analysis_mask]
         analysis_levels_no_nans = analysis_levels.values[analysis_mask.flatten()]
-        #end = forecast_no_nans.size
-        #forecast_levels_no_nans = forecast_region.time.values[:end]
-        #analysis_no_nans = np.array(list(filter(lambda v: v == v, analysis_region.values)))
-        #analysis_levels_no_nans = analysis_region.time.values[:end]
-        print(forecast_no_nans.size)
-        print('forecast cleaned of nans: ', forecast_no_nans)
-        print('analysis cleaned of nans: ', analysis_no_nans)
+
         #do not plot regions with no values
         if forecast_no_nans.size == 0:
             ax.text(0.5, 0.5, 'No valid rmse data in this region')
@@ -227,10 +213,7 @@ class GUIVertProf:
         pad_y_axis = .10 * (max(forecast_levels.values) - min(forecast_levels.values))
         ax.set_ylim((forecast_levels_no_nans[0] - pad_y_axis),
                     (forecast_levels_no_nans[-1] + pad_y_axis))
-        #ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%t'))
-        #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%m/%d/%t'))
-
-        print(ax.get_yticks())
+        
         #pad x axis by 20% at right
         x_max = max(np.nanmax(forecast_region.values.flatten()), np.nanmax(analysis_region.values.flatten()))
         x_max = x_max + .20 * x_max
@@ -243,57 +226,40 @@ class GUIVertProf:
         for lev in ax.get_yticks():
             ax.axhline(y = lev, ls = ':')
 
-
-        #subplot title
-        #print('forecast: ', forecast_region.values.flatten())
-        #print('forecast mean: ', np.nanmean(forecast_region.values.flatten()))
-        #print('analysis: ', analysis_region.values.flatten())
-        #print('analysis mean: ', np.nanmean(analysis_region.values.flatten()))            
-        '''ax.set_title(self.region_menu.get(self.region_menu.curselection()) + '     ' +
-                     'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
-                     'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))'''
-
-
         ax.set_xlabel(self.region_menu.get(self.region_menu.curselection()) + '\n' + 'rmse')
         ax.legend(loc = 'upper left', framealpha = 0.25)
 
 
-        #need to basically plot two plots on top of each other to get 2 y scales
+        #need to basically plot two plots on top of each other to get 2 x scales
         ax_twin = ax.twiny()
         ax_twin.scatter(y = possible_obs[level_type].values, x = possible_obs.values,
                         color = 'blue', marker = 'o', s = 15, facecolors = 'none')
         ax_twin.scatter(y = used_obs[level_type].values, x = used_obs.values,
                         color = 'blue', marker = 'x', s = 15)
-        '''
-        print('possible obs: ', possible_obs_region.values.flatten())
-        print('used obs: ', used_obs_region.values.flatten())
-        print('difference in obs: ', possible_obs_region.values.flatten()-used_obs_region.values.flatten())'''
 
         x_max = max(max(possible_obs.values.flatten()), max(used_obs.values.flatten()))
         x_max = x_max + .20 * x_max
 
         ax_twin.set_xlim(0, x_max)
         ax_twin.set_xlabel('# of obs: o = poss, x = used', color = 'blue')
-        #ax.fmt_xdata = mdates.DateFormatter('%m/%d')
-        #ax.autofmt_xdate()
-        '''for tick in ax.get_xticklabels():
-            tick.set_rotation(45)
-        ax.tick_params(labelsize = 8)'''
-            
-        #need to add plot title and spacing adjustments
         
         fig.suptitle(str(obs_type) + '\n' + self.region_menu.get(self.region_menu.curselection()) + '     ' +
                      'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
                      'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
-        #fig.subplots_adjust(hspace = 0.8)
 
 
 def main(diag):
+
+    '''create a tkinter GUI for plotting vertical profile data
+    
+    Keyword arguments:
+    diag -- an obs_diag output netCDF file
+    
+    '''
     
     root = Tk()
+    root.title("Vertical Profile Plotter")
     widg = GUIVertProf(root, 0, 0, diag)
-    #widg.plot()
-    print('on to mainloop')
     root.mainloop()
         
 if __name__ == '__main__':
