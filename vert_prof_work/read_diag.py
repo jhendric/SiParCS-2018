@@ -23,7 +23,7 @@ class ReadDiag:
         '''Initialize reader object with obs diag file opened in xarray
 
         Keyword arguments:
-        file_path: path of obs_diag output netCDF file
+        file_path -- path of obs_diag output netCDF file
         
         '''
         
@@ -34,7 +34,7 @@ class ReadDiag:
         '''Convert a byte string variable to a typical Python string format
 
         Keyword arguments:
-        bytes: byte string to be decoded
+        bytes -- byte string to be decoded
 
         '''
 
@@ -46,10 +46,10 @@ class ReadDiag:
         '''Extract DataArray from larger dataset using given parameters
 
         Keyword arguments:
-        variable_name: name of variable e.g. AIRCRAFT_HORIZONTAL_WIND
-        plot_type: time series or vertical profile
-        data_type: forecast or analysis
-        dataset: xarray Dataset to grab from
+        variable_name -- name of variable e.g. AIRCRAFT_HORIZONTAL_WIND
+        plot_type -- time series or vertical profile
+        data_type -- forecast or analysis
+        dataset -- xarray Dataset to grab from
 
         '''
         
@@ -73,8 +73,8 @@ class ReadDiag:
         '''Filter an xarray DataArray using a single condition
 
         Keyword arguments:
-        data_array: DataArray to be filtered
-        *args: set of tuples of form (coordinate name, value)
+        data_array -- DataArray to be filtered
+        *args -- set of tuples of form (coordinate name, value)
         
         '''
         
@@ -115,8 +115,8 @@ class ReadDiag:
         '''Filter an xarray DataArray using multiple conditions
 
         Keyword arguments:
-        data_array: DataArray to be filtered
-        *args: set of tuples of form (coordinate name, value)
+        data_array -- DataArray to be filtered
+        *args -- set of tuples of form (coordinate name, value)
         
         '''
         
@@ -158,12 +158,13 @@ class ReadDiag:
         return data
     
     def plot_evolution(self, obs_type, level, dataset):
+
         '''Replicate plot_evolution.m. Not used in any GUI file
         
         Keyword arguments:
-        obs_type: observation type to be plotted
-        level: observation level to be plotted
-        dataset: xarray Dataset to grab data from
+        obs_type -- observation type to be plotted
+        level -- observation level to be plotted
+        dataset -- xarray Dataset to grab data from
 
         '''
 

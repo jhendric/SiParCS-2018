@@ -13,22 +13,30 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 
 import numpy as np
-import pandas as pd
-import math
 from read_innov import GenerateInnov
 np.set_printoptions(threshold = np.nan) #without this setting, self.levels will be incomplete
-import time
 
-'''
-
-Generates innovation plots in a GUI using read_innov.py
-
-'''
 
 class GUIInnov:
-
+    '''
+    
+    Generates innovation plots in a GUI using read_innov.py
+    
+    '''
+    
     def __init__(self, window, grid_col, grid_row, initial, final):
 
+        '''Initialize GUI with available observation types and levels
+        
+        Keyword arguments:
+        window -- the root window holding all GUI elements
+        grid_col -- the column in the root window that will contain the main tkinter frame
+        grid_row -- the row in the root window that will contain the main tkinter frame
+        initial -- path of pre-DART model restart file
+        final -- path of post-DART model restart file
+        
+        '''
+        
         self.gen = GenerateInnov(initial, final)
 
         self.initial = self.gen.initial
@@ -77,7 +85,6 @@ class GUIInnov:
         
         self.data_menu.selection_set(0)
         self.data_menu.event_generate('<<ListboxSelect>>')
-        #print('size of data box: ', self.data_menu.size())
 
         #data type scrollbar
         self.data_bar = ttk.Scrollbar(self.data_frame, orient = VERTICAL, command = self.data_menu.yview)
@@ -111,8 +118,15 @@ class GUIInnov:
         
     def populate(self, variable_name, menu, event = None):
         #event arg is passed by menu events, variable is the data variable to be manipulated, menu is the menu to change
+
+        '''Populate levels menu based on observation type selected
         
-        print('populating' + variable_name)
+        Keyword arguments:
+        variable_name -- data variable to be populated (levels in this GUI)
+        menu -- corresponding menu to change
+        event -- argument passed automatically by any tkinter menu event
+        
+        '''
         
         #clear lower level menus
 
@@ -126,20 +140,17 @@ class GUIInnov:
         
         var = 'data_' + variable_name
 
-        #TODO: this differs from the 3D obs and should be more modularized at some point to match hierarchy idea
-
         if var == 'data_levels':
             
             self.initial_var = self.initial[self.data_menu.get(self.data_menu.curselection())]
             self.final_var = self.final[self.data_menu.get(self.data_menu.curselection())]
-            print(self.final_var)                  
+            
             #find what coordinates levels are in 
 
             self.level_type = None
 
             for dim in self.final_var.dims:
                 #get dimension type
-                print(dim)
                 if dim.lower() in ('plevel', 'hlevel', 'surface', 'level', 'lev',
                                      'height', 'elevation', 'elev', 'z', 'h', 'depth'):
                     self.level_type = dim
@@ -162,17 +173,16 @@ class GUIInnov:
             last = menu.get('end')[:-1]
             menu.delete('end')
             menu.insert(END, last)
-            
-        print(self.levels.get())
 
     def plot(self, event = None):
-        #a = time.time()
-        #event arg is passed by menu events
-        print('plotting')
-        print('currently selected data type: ', self.data_menu.get(self.data_menu.curselection()))
-        print('currently selected level: ', self.level_menu.get(self.level_menu.curselection()))
+
+        '''Plot difference in model state data for a selected observation type and level
         
-        
+        Keyword arguments:
+        event -- an argument passed by any tkinter menu event. Has no influence on output but
+        tkinter requires it to be passed to any method called by a menu event.
+
+        '''
         
         fig = Figure(figsize = (12, 8))
         ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
@@ -194,37 +204,38 @@ class GUIInnov:
             self.initial_var = self.initial[var_name]
             self.innov = self.final_var - self.initial_var
             self.innov.attrs = self.final_var.attrs
+
             if 'long_name' in self.innov.attrs:
                 self.innov.attrs['long_name'] = 'Difference in ' + self.innov.attrs['long_name']
-            print(self.innov)
-            print(np.mean(self.innov.values))
+
             self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')
-            #ax.set_ytitle('Difference between final and initial ' + var_name)
+            
             ax.set_title('Innovation for ' + var_name)
         else:
             #get current level
             level = np.float64(float(self.level_menu.get(self.level_menu.curselection()).split(':')[0]))
-            print('level: ', level)
             #narrow down data to correct data variable, correct level
             self.innov = self.gen.diff(var_name, level, self.level_type)
-            print(self.innov)
-            print(np.mean(self.innov.values))
             self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')            
             ax.set_title('Innovation for ' + var_name +  ' @ ' + str(level))
-            #ax.set_ytitle('Difference between final and initial ' + var_name + ' @ ' + str(level))
+           
         plt.title = 'test'
         
         ax.gridlines(draw_labels = True)
         ax.coastlines()
 
-        #ax.set_title('test')
-
 def main(initial, final):
+
+    '''create a tkinter GUI for plotting innovation data
+
+    Keyword arguments:
+    initial -- path of pre-DART model restart file
+    final -- path of post-DART model restart file
+    
+    '''
     
     root = Tk()
     widg = GUIInnov(root, 0, 0, initial, final)
-    #widg.plot()
-    print('on to mainloop')
     root.mainloop()
         
 if __name__ == '__main__':

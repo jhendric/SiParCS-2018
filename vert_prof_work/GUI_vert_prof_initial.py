@@ -134,8 +134,6 @@ class GUIVertProf:
         tkinter requires it to be passed to any method called by a menu event.
 
         '''
-        
-        #event arg is passed by menu events
 
         obs_type = self.obs_menu.get(self.obs_menu.curselection())
 
