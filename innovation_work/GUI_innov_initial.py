@@ -235,6 +235,7 @@ def main(initial, final):
     '''
     
     root = Tk()
+    root.title("Innovation Plotter")
     widg = GUIInnov(root, 0, 0, initial, final)
     root.mainloop()
         

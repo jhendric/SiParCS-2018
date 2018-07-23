@@ -12,25 +12,30 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 import numpy as np
-import pandas as pd
-import math
 from read_diag import ReadDiag
 np.set_printoptions(threshold = np.nan) #without this setting, self.levels will be incomplete
-import time
-import itertools
-from datetime import datetime
-
-'''
-
-Uses read_diag.py for plotting obs diag info in a GUI
-
-'''
 
 
 class GUIObsDiagInitial:
 
+    '''
+    
+    Uses read_diag.py for plotting evolution of RMSE in a GUI
+    
+    '''
+    
     def __init__(self, window, grid_col, grid_row, diag):
 
+        '''Initialize GUI for plotting evolution of RMSE
+        
+        Keyword arguments:
+        window -- the root window holding all GUI elements
+        grid_col -- the column in the root window that will contain the main tkinter frame
+        grid_row -- the row in the root window that will contain the main tkinter frame
+        diag -- an obs_diag output netCDF file
+        
+        '''
+        
         self.reader = ReadDiag(diag)
         self.original_data = self.reader.full_data
 
@@ -61,12 +66,6 @@ class GUIObsDiagInitial:
         self.forecast = None
         self.analysis = None
         self.level_type = None
-        
-        '''
-        #dictionary of obs types to their indices (shouldn't need this since should just need the names)
-        self.obs_type_dict = {obs_type : index for obs_type, index in
-                              zip(obs_types_sparse, list(self.original_data.attrs.values())[start_index])}'''
-        
 
         #GUI config
 
@@ -83,7 +82,6 @@ class GUIObsDiagInitial:
         
         self.obs_menu.selection_set(0)
         self.obs_menu.event_generate('<<ListboxSelect>>')
-        #print('size of obs box: ', self.obs_menu.size())
 
         #obs scrollbar
         self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
@@ -115,14 +113,17 @@ class GUIObsDiagInitial:
         self.plot_button.grid(column = 2, row = 5, sticky = "N, S, E, W")
         
     def populate(self, variable_name, menu, event = None):
-        #event arg is passed by menu events, variable is the data variable to be manipulated, menu is the menu to change
+
+        '''Populate levels menu based on observation type selected
         
-        print('populating' + variable_name)
+        Keyword arguments:
+        variable_name -- data variable to be populated (levels in this GUI)
+        menu -- corresponding menu to change
+        event -- argument passed automatically by any tkinter menu event
         
+        '''
+
         #clear lower level menus
-        
-        #for i in range(self.menu_hierarchy.index(menu), len(self.menu_hierarchy)):
-        #    self.menu_hierarchy[i].delete('0', 'end')
 
         self.level_menu.delete('0', 'end')
             
@@ -133,8 +134,6 @@ class GUIObsDiagInitial:
         #used to dynamically access object variables
         
         var = 'data_' + variable_name
-
-        #TODO: this differs from the 3D obs and should be more modularized at some point to match hierarchy idea
 
         if var == 'data_levels':
             
@@ -148,7 +147,6 @@ class GUIObsDiagInitial:
 
             for coord in self.forecast.coords:
                 #get coordinate type
-                print(coord)
                 if coord.lower() in ('plevel', 'hlevel', 'surface'):
                     self.level_type = coord
                     break
@@ -156,18 +154,17 @@ class GUIObsDiagInitial:
             #surface may not show up in coords because it has no dimensions, so this is a workaround
             if self.level_type == None:
                 self.level_type = 'surface'
-            #self.levels.set(value = np.unique(self.forecast[self.level_type].values))
+                
             for level in np.unique(self.forecast[self.level_type].values):
                 #add warning for levels that are filled entirely with nan's
                 forecast = self.reader.filter_single(self.forecast, (self.level_type, level))
                 nanmean = np.nanmean(self.reader.filter_single(forecast, ('copy', 'rmse')))
                 #a nan value will never equal any value, so if the mean outputs nan this will be false
-                print(level, nanmean, nanmean == nanmean)
                 if nanmean != nanmean:
                     menu.insert(END, str(level) + ': No data found for this level, will not plot')
                 else:
                     menu.insert(END, level)
-        #should work in class scope since menu is a self variable
+
         if (menu.get(0) == '['):
             menu.delete('0')
             
@@ -180,29 +177,22 @@ class GUIObsDiagInitial:
             last = menu.get('end')[:-1]
             menu.delete('end')
             menu.insert(END, last)
-            
-        print(self.levels.get())
         
     def plot(self, event = None):
-        #a = time.time()
-        #event arg is passed by menu events
-        print('plotting')
-        print('currently selected ob type: ', self.obs_menu.curselection())
-        print(self.level_menu.get(self.level_menu.curselection()))
+
+        '''Plot time evolution of rmse data for a selected observation type and level
+
+        Keyword arguments:
+        event -- an argument passed by any tkinter menu event. Has no influence on output but
+        tkinter requires it to be passed to any method called by a menu event.
+
+        '''
+        
         level = np.float64(float(self.level_menu.get(self.level_menu.curselection()).split(':')[0]))
         obs_type = self.obs_menu.get(self.obs_menu.curselection())
-        print('level: ', level)
-        print('obs type: ', obs_type)
-        print('level type: ', self.level_type)
-        
-        print('forecast before level filtering: ', self.forecast)
-        print('analysis before level filtering: ', self.analysis)
-        #print('forecast test: ', self.forecast.where(self.forecast.plevel == 687.5))
+
         forecast = self.reader.filter_single(self.forecast, (self.level_type, level))
         analysis = self.reader.filter_single(self.analysis, (self.level_type, level))
-        
-        print('forecast: ', forecast)
-        print('analysis: ', analysis)
 
         possible_obs = self.reader.filter_single(forecast, ('copy', 'Nposs'))
         used_obs = self.reader.filter_single(forecast, ('copy', 'Nused'))
@@ -211,9 +201,6 @@ class GUIObsDiagInitial:
 
         forecast = self.reader.filter_single(forecast, ('copy', 'rmse'))
         analysis = self.reader.filter_single(analysis, ('copy', 'rmse'))
-        print('forecast filtered to rmse: ', forecast)
-        print('analysis filtered to rmse: ', analysis)
-
         
         #need to change this to tolerate different numbers of subplots (regions)
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize = (8, 8))
@@ -226,10 +213,6 @@ class GUIObsDiagInitial:
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
-
-        print('region 1 mean: ', np.nanmean(forecast.where(forecast.region == 1, drop = True)))
-        print('region 2 mean: ', np.nanmean(forecast.where(forecast.region == 2, drop = True)))
-        print('region 3 mean: ', np.nanmean(forecast.where(forecast.region == 3, drop = True)))
         
         for index, ax in enumerate((ax1, ax2, ax3)):
 
@@ -237,27 +220,18 @@ class GUIObsDiagInitial:
             analysis_region = analysis.where(analysis.region == index + 1, drop = True)
             possible_obs_region = possible_obs.where(possible_obs.region == index + 1, drop = True)
             used_obs_region = used_obs.where(used_obs.region == index + 1, drop = True)
-            
-            #print('forecast region: ', forecast_region)
-            #print('analysis region: ', analysis_region)
+
             #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
-            print('forecast region with nans: ', forecast_region.values)
+            
             forecast_mask = np.array(list(filter(lambda v: v == v, forecast_region.values)))
             forecast_mask = ~np.isnan(forecast_region.values)
-            #print(forecast_no_nans.flatten())
             forecast_no_nans = forecast_region.values[forecast_mask]
-            print(forecast_mask.size, forecast_region.time.values.size)
             forecast_times_no_nans = forecast_region.time.values[forecast_mask.flatten()]
+            
             analysis_mask = ~np.isnan(analysis_region.values)
             analysis_no_nans = analysis_region.values[analysis_mask]
             analysis_times_no_nans = analysis_region.time.values[analysis_mask.flatten()]
-            #end = forecast_no_nans.size
-            #forecast_times_no_nans = forecast_region.time.values[:end]
-            #analysis_no_nans = np.array(list(filter(lambda v: v == v, analysis_region.values)))
-            #analysis_times_no_nans = analysis_region.time.values[:end]
-            print(forecast_no_nans.size)
-            print('forecast cleaned of nans: ', forecast_no_nans)
-            print('analysis cleaned of nans: ', analysis_no_nans)
+
             #do not plot regions with no values
             if forecast_no_nans.size == 0:
                 ax.text(0.5, 0.5, 'No valid rmse data in this region')
@@ -282,10 +256,7 @@ class GUIObsDiagInitial:
             pad_x_axis = .10 * (max(forecast_region.time.values) - min(forecast_region.time.values))
             ax.set_xlim(((forecast_times_no_nans[0] - pad_x_axis).astype("M8[ms]")),
                         (forecast_times_no_nans[-1] + pad_x_axis).astype("M8[ms]"))
-            #ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%t'))
-            #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%m/%d/%t'))
             
-            print(ax.get_xticks())
             #pad y axis by 20% at top
             y_max = max(np.nanmax(forecast_region.values.flatten()), np.nanmax(analysis_region.values.flatten()))
             y_max = y_max + .20 * y_max
@@ -300,10 +271,6 @@ class GUIObsDiagInitial:
 
             
             #subplot title
-            #print('forecast: ', forecast_region.values.flatten())
-            #print('forecast mean: ', np.nanmean(forecast_region.values.flatten()))
-            #print('analysis: ', analysis_region.values.flatten())
-            #print('analysis mean: ', np.nanmean(analysis_region.values.flatten()))            
             ax.set_title(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '     ' +
                      'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
                          'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
@@ -319,18 +286,12 @@ class GUIObsDiagInitial:
                             color = 'blue', marker = 'o', s = 15, facecolors = 'none')
             ax_twin.scatter(x = used_obs_region.time.values, y = used_obs_region.values,
                             color = 'blue', marker = 'x', s = 15)
-            '''
-            print('possible obs: ', possible_obs_region.values.flatten())
-            print('used obs: ', used_obs_region.values.flatten())
-            print('difference in obs: ', possible_obs_region.values.flatten()-used_obs_region.values.flatten())'''
 
             y_max = max(max(possible_obs_region.values), max(used_obs_region.values))
             y_max = y_max + .20 * y_max
             
             ax_twin.set_ylim(0, y_max)
             ax_twin.set_ylabel('# of obs: o = poss, x = used', color = 'blue')
-            #ax.fmt_xdata = mdates.DateFormatter('%m/%d')
-            #ax.autofmt_xdate()
             for tick in ax.get_xticklabels():
                 tick.set_rotation(45)
             ax.tick_params(labelsize = 8)
@@ -341,11 +302,18 @@ class GUIObsDiagInitial:
 
 
 def main(diag):
+
+    '''create a tkinter GUI for plotting time evolution data
+    
+    Keyword arguments:
+    diag -- an obs_diag output netCDF file
+
+    '''
     
     root = Tk()
+    root.title("RMSE Time Evolution Plotter")
     widg = GUIObsDiagInitial(root, 0, 0, diag)
     widg.plot()
-    print('on to mainloop')
     root.mainloop()
 
 if __name__ == '__main__':

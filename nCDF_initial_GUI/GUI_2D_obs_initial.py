@@ -2,47 +2,47 @@
 
 from tkinter import *
 from tkinter import ttk
-import mkl
+
 import xarray as xa
+
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import cartopy.crs as ccrs
+
 import numpy as np
-import pandas as pd
-import math
+
 from plot_2D_obs_initial import plot_2D_obs
 np.set_printoptions(threshold=np.nan) #without this setting, self.levels will be incomplete
-import time
-'''
-
-Incorporates plot_2D_obs_initial.py into a GUI with slider bars
-and drop down menus.
-
-'''
-
 
 
 class GUI_2D_obs_initial:
-
+    '''
     
+    Incorporates plot_2D_obs_initial.py into a GUI for plotting observation QC values in 2D.
+    
+    '''    
     
     def __init__(self, window, grid_col, grid_row, obs_sequence):
+
+        '''Initialize GUI for plotting observation QC values in 2D
+        
+        Keyword arguments:
+        window -- the root window holding all GUI elements
+        grid_col -- the column in the root window that will contain the main tkinter frame
+        grid_row -- the row in the root window that will contain the main tkinter frame
+        obs_sequence -- path to a DART obs sequence file
+
+        '''
         
         self.plotter = plot_2D_obs(obs_sequence)
         self.original_data = self.plotter.data
-        #print('initial test: ', np.unique(self.plotter.data.where(
-        #    self.plotter.data.obs_types == 5, drop = True).z.values))
-        #print('initial test: ')
-        #x = self.plotter.data.where(self.plotter.data.obs_types == 5, drop = True)
-        #print(x.where(abs(x.z - 460.0) < 1e-10, drop = True))
-
-        #print(np.unique(self.plotter.obs_types.values).size)
 
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
@@ -70,11 +70,6 @@ class GUI_2D_obs_initial:
         
         self.obs_type_names = StringVar(value = [str(count_dict[self.plotter.obs_type_dict[x]]) +
                                                  " : " + x for x in obs_type_dict_sparse])
-                                                 
-        
-        #self.obs_type_names = StringVar(value = self.plotter.obs_type_dict.keys())
-        
-        #print('obs_type_names: ', self.obs_type_names.get())
 
         #GUI config
 
@@ -85,30 +80,18 @@ class GUI_2D_obs_initial:
         self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
                                 height = 18, width = 40, selectmode = "extended", exportselection = False)
         self.obs_menu.grid(column = 1, row = 2, rowspan = 2, sticky = "N, S, E, W")
-        
-        #self.obs_menu.bind('<Return>', self.populate_levels)
+    
         self.obs_menu.bind('<Return>', lambda event : self.populate('levels', self.level_menu, event))
         
         for i in range(len(self.obs_type_names.get())):
             self.obs_menu.selection_set(i)
         self.obs_menu.event_generate('<<ListboxSelect>>')
-        #print('size of obs box: ', self.obs_menu.size())
-
-        #current obs types
-        #obs_indices = [val+1 for val in self.obs_menu.curselection()]
 
         #obs scrollbar
         self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
         self.obs_menu.configure(yscrollcommand = self.obs_bar.set)
         self.obs_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, E")
         
-        #print('indices of ob types: ', obs_indices)
-        #print(type(obs_indices))
-
-        
-        #self.data = self.plotter.filter_disjoint(self.plotter.data, ('obs_types', obs_indices))
-        #self.levels = StringVar(value = np.unique(self.data.z.values))
-
         self.levels = StringVar()
         
         #level selection
@@ -121,7 +104,6 @@ class GUI_2D_obs_initial:
                                   height = 18, width = 40, selectmode = "extended", exportselection = False)
         self.level_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
 
-        #self.level_menu.bind('<Return>', self.populate_qc)
         self.level_menu.bind('<Return>', lambda event : self.populate('qc', self.qc_menu, event))
         
         #level scrollbar
@@ -154,7 +136,6 @@ class GUI_2D_obs_initial:
             'data_qc' : 'z'
         }
         self.menu_hierarchy = [self.obs_menu, self.level_menu, self.qc_menu]
-        #self.data_hierarchy = [self.plotter.data, self.data_obs_types, self.data_levels, self.data_qc]
         self.data_hierarchy = ['original_data', 'data_levels', 'data_qc']
         
         #populate levels
@@ -200,8 +181,17 @@ class GUI_2D_obs_initial:
         s.theme_use('clam')
 
     def populate(self, variable_name, menu, event = None):
-        #event arg is passed by menu events, variable is the data variable to be manipulated, menu is the menu to change
-        print('populating ' + variable_name)
+
+        '''Populate levels, time, and QC menus based on which selections in a menu have
+        been modified.
+
+        Keyword arguments:
+        variable_name -- data variable to be populated
+        menu -- corresponding menu to change
+        event -- argument passed automatically by any tkinter menu event
+
+        '''
+        
         #clear lower level menus
         for i in range(self.menu_hierarchy.index(menu), len(self.menu_hierarchy)):
             self.menu_hierarchy[i].delete('0', 'end')
@@ -223,7 +213,7 @@ class GUI_2D_obs_initial:
 
         #retrieve relevant data for this level of the hierarchy
         setattr(self, var,
-                self.plotter.filter_test(getattr(self, self.data_hierarchy[self.data_hierarchy[1:].index(var)]),
+                self.plotter.filter(getattr(self, self.data_hierarchy[self.data_hierarchy[1:].index(var)]),
                                          (self.data_request_dict[var], indices)))
 
         #set corresponding menu variables
@@ -252,27 +242,16 @@ class GUI_2D_obs_initial:
             menu.insert(END, last)    
         
     def plot_2D(self, event = None):
-        a = time.time()
-        #event arg is passed by menu events
-        print('plotting')
-        #print(self.plotter.obs_type_dict.values())
-        print('currently selected ob types: ', self.obs_menu.curselection())
 
+        '''Plot observation QC values on a global 2D map
 
-        #current levels
-        #level_indices = [val + 1 for val in self.level_menu.curselection()]
+        Keyword arguments:
+        event -- an argument passed by any tkiner menu event. Has no influence on output but
+        tkinter requires it to be passed to any method called by a menu event
 
-        #levels = [np.float64(self.level_menu.get(val)) for val in self.level_menu.curselection()]
-        #print([self.qc_menu.get(val).split(":", 1) for val in self.qc_menu.curselection()])
-        qc = [np.int64(self.qc_menu.get(val).split(": ", 1)[1][0]) for val in self.qc_menu.curselection()]
-
-        print(qc)
-        #print('indices of levels :', level_indices)
-        #print(type(level_indices))
+        '''
         
-        #print('levels: ', levels)
-
-        #print('test line: ', self.data.where(self.data.z == levels[0], drop = True))
+        qc = [np.int64(self.qc_menu.get(val).split(": ", 1)[1][0]) for val in self.qc_menu.curselection()]
 
         #make figure and canvas to draw on
         fig = Figure(figsize = (12,8))
@@ -289,19 +268,14 @@ class GUI_2D_obs_initial:
         #disable part of the coordinate display functionality, else everything flickers
         #ax.format_coord = lambda x, y: ''
         
-        data = self.plotter.filter_test(self.data_qc, ('qc_DART', qc))
+        data = self.plotter.filter(self.data_qc, ('qc_DART', qc))
         
-        #print(data.obs_types.values)
-        print(data.obs_types.values.size)
-        print(np.unique(data.qc_DART.values))
-        print(np.unique(data.obs_types.values))
 
         #get indices where obs_types change (array is sorted in filter_disjoint)
         indices = np.where(data.obs_types.values[:-1] != data.obs_types.values[1:])[0]
         indices[0:indices.size] += 1
         indices = np.insert(indices, 0, 0)
         indices = np.append(indices, data.obs_types.values.size)
-        print(indices)
         
         ax.stock_img()
         ax.gridlines()
@@ -310,25 +284,10 @@ class GUI_2D_obs_initial:
         #colormap for QC values
         cmap = plt.get_cmap('gist_ncar', 9)
         ecmap = plt.get_cmap('jet', 90)
-        #image = ax.scatter(data.lons, data.lats, c = data.qc_DART.values, cmap = cmap, vmin = 0, vmax = 9,
-        #           s = 100, marker = "+", transform = ccrs.PlateCarree())
 
-        '''brute force solution test
-
-        for obs_type in np.unique(data.obs_types.values):
-            d = data.where(data.obs_types == obs_type)
-            ax.scatter(d.lons, d.lats, c = d.qc_DART.values, cmap = cmap, vmin = 0, vmax = 9, s = 100,
-                       marker = "+", label = obs_type, transform = ccrs.PlateCarree())'''
-
+        
         #plot each observation type separately to get differing edge colors and markers
-        '''
-        for i in range(indices.size - 1):
-            start = indices[i]
-            end = indices[i+1]
-            ax.scatter(data.lons[start:end], data.lats[start:end], c = data.qc_DART.values[start:end],
-                       cmap = cmap, vmin = 0, vmax = 9, s = 50, edgecolors = ecmap(1-float(i/indices.size)),
-                       label = self.plotter.obs_type_inverse.get(data.obs_types.values[start]),
-                       marker = self.markers[i % len(self.markers)], transform = ccrs.PlateCarree())'''
+        
         for i in range(indices.size - 1):
             start = indices[i]
             end = indices[i+1]
@@ -356,28 +315,27 @@ class GUI_2D_obs_initial:
         cbar.set_ticks(loc)
         cbar.set_ticklabels(labels)
 
-        #TODO: make fill colors in legend transparent to avoid confusion
-        #leg = ax.get_legend()
-        #for handle in leg.legendHandles:
-        #    handle.set_fill_color('None')
         ax.set_aspect('auto')
-        #fig.tight_layout()
-        print(time.time()-a)
 
         s= ttk.Style()
         s.theme_use('clam')
 
 
 def main(obs_sequence):
+
+    '''create a tkinter GUI for plotting observation QC values in 2D
+
+    Keyword arguments:
+    obs_sequence -- path to a DART obs sequence file
+
+    '''
     
     root = Tk()
+    root.title("2D Observation Plotter")
     widg = GUI_2D_obs_initial(root, 0, 0, obs_sequence)
     widg.plot_2D()
-    print('on to mainloop')
     root.style = ttk.Style()
-    print(root.style.theme_use())
     root.style.theme_use('clam')
-    print(root.style.theme_use())
     root.mainloop()
         
 if __name__ == '__main__':

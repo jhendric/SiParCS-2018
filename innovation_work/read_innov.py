@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import math
-import time
 
 import cartopy.crs as ccrs
 
@@ -62,12 +61,8 @@ class GenerateInnov:
         data comes from a single time'''
         if 'time' in innov_narrow.dims or 'time' in innov_narrow.coords:
             innov_narrow = innov_narrow.where(innov_narrow.time == innov_narrow.time.values[0], drop = True)
-            #squeeze eliminates single valued dimensions, ensures xarray plotting works correctly later
-            #innov_narrow = innov_narrow.squeeze('time')
-            #innov_narrow = innov_narrow.drop([innov_narrow.time.values[0]], dim = 'time')
             
         #level_name will definitely be only 1 possible value and should be dropped from the dimensions (not needed?)
-        #innov_narrow = innov_narrow.squeeze(level_name)
         return innov_narrow
         
     def plot(self, innov):

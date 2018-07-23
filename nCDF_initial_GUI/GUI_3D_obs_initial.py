@@ -21,34 +21,35 @@ import cartopy.feature
 from cartopy.mpl.patch import geos_to_path
 
 import numpy as np
-import pandas as pd
-import math
 from plot_2D_obs_initial import plot_2D_obs
 np.set_printoptions(threshold=np.nan) #without this setting, self.levels will be incomplete
-import time
 import itertools
-
-
-
-'''
-
-Incorporates plot_3D_obs_initial.py into a GUI with slider bars
-and drop down menus.
-
-'''
-
 
 
 class GUI_3D_obs_initial:
 
-    
+    '''
+
+    Incorporates plot_2D_obs_initial.py into a GUI for plotting observation values
+    and QC values in 3D.
+
+    '''
     
     def __init__(self, window, grid_col, grid_row, obs_sequence):
+
+        '''Initialize GUI for plotting observation values and QC values in 3D
+
+        Keyword arguments:
+        window -- the root window holding all GUI elements
+        grid_col -- the column in the root window that will contain the main tkinter frame
+        grid_row -- the row in the root window that will contain the main tkinter frame
+        obs_sequence -- path to a DART obs sequence file
+
+        '''
         
         self.plotter = plot_2D_obs(obs_sequence)
         self.original_data = self.plotter.data
-        
-        print(np.unique(self.original_data.obs_types.values).size)
+
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
@@ -76,8 +77,6 @@ class GUI_3D_obs_initial:
         self.obs_type_names = StringVar(value = [str(count_dict[self.plotter.obs_type_dict[x]]) +
                                                  " : " + x for x in obs_type_dict_sparse])
                                                  
-
-   
         
         #GUI config
 
@@ -93,7 +92,6 @@ class GUI_3D_obs_initial:
         
         self.obs_menu.selection_set(0)
         self.obs_menu.event_generate('<<ListboxSelect>>')
-        #print('size of obs box: ', self.obs_menu.size())
 
         #obs scrollbar
         self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
@@ -204,8 +202,17 @@ class GUI_3D_obs_initial:
         s.theme_use('clam')
 
     def populate(self, variable_name, menu, event = None):
-        #event arg is passed by menu events, variable is the data variable to be manipulated, menu is the menu to change
-        print('populating ' + variable_name)
+        
+        '''Populate levels, time, and QC menus based on which selections in a menu have
+        been modified.
+        
+        Keyword arguments:
+        variable_name -- data variable to be populated
+        menu -- corresponding menu to change
+        event -- argument passed automatically by any tkinter menu event
+        
+        '''
+        
         #clear lower level menus
         for i in range(self.menu_hierarchy.index(menu), len(self.menu_hierarchy)):
             self.menu_hierarchy[i].delete('0', 'end')
@@ -228,7 +235,7 @@ class GUI_3D_obs_initial:
             
         #retrieve relevant data for this level of the hierarchy
         setattr(self, var,
-                self.plotter.filter_test(getattr(self, self.data_hierarchy[self.data_hierarchy[1:].index(var)]),
+                self.plotter.filter(getattr(self, self.data_hierarchy[self.data_hierarchy[1:].index(var)]),
                                          (self.data_request_dict[var], indices)))
 
         #set corresponding menu variables
@@ -238,9 +245,7 @@ class GUI_3D_obs_initial:
         elif var == 'data_qc':
             unique, counts = np.unique(getattr(self, var).qc_DART.values, return_counts = True)
             count_dict = dict(zip(unique, counts))
-            print(count_dict)
             self.qc.set(value = [str(count_dict[val]) + " : " + str(self.qc_key[val]) for val in unique])
-            print(np.unique(getattr(self, var).qc_DART.values).size)
             
         #should work in class scope since menu is a self variable
         if (menu.get(0) == '['):
@@ -257,15 +262,16 @@ class GUI_3D_obs_initial:
             menu.insert(END, last)    
         
     def plot_3D(self, event = None):
-        a = time.time()
-        #event arg is passed by menu events
-        print('plotting')
-        #print(self.plotter.obs_type_dict.values())
-        print('currently selected ob types: ', self.obs_menu.curselection())
+
+        '''Plot observation QC values on a global 2D map
+
+        Keyword arguments:
+        event -- an argument passed by any tkiner menu event. Has no influence on output but
+        tkinter requires it to be passed to any method called by a menu event
+
+        '''
 
         qc = [np.int64(self.qc_menu.get(val).split(": ", 1)[1][0]) for val in self.qc_menu.curselection()]
-
-        print(qc)
         
         #make figure and canvas to draw on
         fig = Figure(figsize = (12,8))
@@ -274,7 +280,6 @@ class GUI_3D_obs_initial:
         canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 4, sticky = "N, S, E, W")
         self.main_frame.grid_columnconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(1, weight = 1)
-
         
         #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
@@ -283,7 +288,7 @@ class GUI_3D_obs_initial:
         #disable part of the coordinate display functionality, else everything flickers (may need for smaller window)
         #ax.format_coord = lambda x, y: ''
         
-        data = self.plotter.filter_test(self.data_qc, ('qc_DART', qc))
+        data = self.plotter.filter(self.data_qc, ('qc_DART', qc))
         
         target_projection = ccrs.PlateCarree()
 
@@ -321,15 +326,11 @@ class GUI_3D_obs_initial:
             ax.set_zlim(bottom = z_max, top = 0)
             ax.add_collection3d(lc)
         
-        print(data.obs_types.values.size)
-        print(np.unique(data.qc_DART.values))
-        print(np.unique(data.obs_types.values))
-        
         plot_values = None
         cmap = None
         max_value = None
         min_value = None
-        print('num times: ', np.unique(data.times.values).size)
+        
         #colormap for QC values
         if self.val_type.get() == 'QC':
             cmap = plt.get_cmap('gist_ncar', 9)
@@ -341,31 +342,16 @@ class GUI_3D_obs_initial:
             plot_values = data.values.ravel()
             max_value = max(plot_values)
             min_value = min(plot_values)
-        #cmap = plt.get_cmap('gist_ncar', 9)
-        #ecmap = plt.get_cmap('jet', 90)
 
-        print(plot_values.shape)
         #plot each observation type separately to get differing edge colors and markers
         
-        #ax.scatter(lons, lats, data.z, c = data.qc_DART,
-        #           cmap = cmap, vmin = 0, vmax = 9, s = 35, alpha = 0.5)
         ax.scatter(lons, lats, data.z, c = plot_values, cmap = cmap, vmin = min_value, vmax = max_value, s = 35, alpha = 0.5)
-        #label = self.plotter.obs_type_inverse.get(data.obs_types.values[start]))
-        #marker = self.markers[i % len(self.markers)], transform = ccrs.PlateCarree())
         
-        '''
-        #legend positioning
-        box = ax.get_position()
-        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-        ax.legend( bbox_to_anchor = (1, 1),
-                  fontsize = 7, framealpha = 0.25)'''
 
         #make color bar
         sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,max_value+1))
-        #sm = plt.cm.ScalarMappable(cmap = cmap)
         sm._A = []
         cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
-        #cbar.ax.get_xaxis().labelpad = 15
 
         #set up color bar title according to plot type
         if self.val_type.get() == 'QC':
@@ -381,30 +367,28 @@ class GUI_3D_obs_initial:
             
             #get observation name
             cbar.ax.set_xlabel(self.obs_menu.get(self.obs_menu.curselection()).split(" : ", 1)[1])
-
-        
-        #TODO: make fill colors in legend transparent to avoid confusion
-        #leg = ax.get_legend()
-        #for handle in leg.legendHandles:
-        #    handle.set_fill_color('None')
+            
         ax.set_aspect('auto')
-        #fig.tight_layout()
-        print(time.time()-a)
 
         s= ttk.Style()
         s.theme_use('clam')
 
 
 def main(obs_sequence):
+
+    '''create a tkinter GUI for plotting observation QC values in 2D
+
+    Keyword arguments:
+    obs_sequence -- path to a DART obs sequence file
+
+    '''
     
     root = Tk()
+    root.title("3D Observation Plotter")
     widg = GUI_3D_obs_initial(root, 0, 0, obs_sequence)
     widg.plot_3D()
-    print('on to mainloop')
     root.style = ttk.Style()
-    print(root.style.theme_use())
     root.style.theme_use('clam')
-    print(root.style.theme_use())
     root.mainloop()
         
 if __name__ == '__main__':
