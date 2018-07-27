@@ -9,6 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import cartopy.crs as ccrs
 
@@ -76,7 +77,7 @@ class GUIInnov:
 
         self.data_frame = ttk.Frame(self.main_frame, padding = "2")
         self.data_frame.grid(column = 2, row = 1, sticky = "N, S, E, W")
-        ttk.Label(self.data_frame, text = "Observation Type Selection").grid(column = 1, row = 1, sticky = "E, W")
+        ttk.Label(self.data_frame, text = "State Variable Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.data_menu = Listbox(self.data_frame, listvariable = self.data_type_names,
                                 height = 18, width = 40, exportselection = False)
         self.data_menu.grid(column = 1, row = 2, rowspan = 1, sticky = "N, S, E, W")
@@ -184,8 +185,9 @@ class GUIInnov:
 
         '''
         
-        fig = Figure(figsize = (12, 8))
-        ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
+        fig = Figure(figsize = (12, 12))
+        ax = fig.add_axes([0.03, 0.03, 0.95, 0.95], projection = ccrs.PlateCarree())
+        #cax = fig.add_axes([0.955, 0.03, 0.99, 0.99])
         
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
         canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
@@ -208,19 +210,22 @@ class GUIInnov:
             if 'long_name' in self.innov.attrs:
                 self.innov.attrs['long_name'] = 'Difference in ' + self.innov.attrs['long_name']
 
-            self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')
+            #divider = make_axes_locatable(ax)
+            #cax = divider.append_axes("right", size = "5%", pad = 0.05)
+            test = self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r',
+                                   cbar_kwargs = {'orientation' : 'vertical',
+                                                  'fraction' : 0.1})
             
-            ax.set_title('Innovation for ' + var_name)
+            ax.set_title('Innovation for ' + var_name + '\n \n')
         else:
             #get current level
             level = np.float64(float(self.level_menu.get(self.level_menu.curselection()).split(':')[0]))
             #narrow down data to correct data variable, correct level
             self.innov = self.gen.diff(var_name, level, self.level_type)
-            self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')            
-            ax.set_title('Innovation for ' + var_name +  ' @ ' + str(level))
-           
-        plt.title = 'test'
-        
+            self.innov.plot(ax = ax, transform = ccrs.PlateCarree(), cmap = 'bwr_r')
+            ax.set_title('Innovation for ' + var_name +  ' @ ' + str(level) + '\n \n')
+
+        ax.margins(0.5)    
         ax.gridlines(draw_labels = True)
         ax.coastlines()
 

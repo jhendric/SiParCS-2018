@@ -284,7 +284,7 @@ class GUI_3D_obs_initial:
         #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
-        self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
+        self.toolbar_frame.grid(column = 1, row = 5, sticky = "N, S, E, W")
         #disable part of the coordinate display functionality, else everything flickers (may need for smaller window)
         #ax.format_coord = lambda x, y: ''
         
@@ -309,7 +309,8 @@ class GUI_3D_obs_initial:
         
         polys = concat(path.to_polygons() for path in paths)
 
-        ax = Axes3D(fig, xlim = [-180, 180], ylim = [-90, 90])
+        ax = Axes3D(fig, [0.02, 0.02, 0.97, 0.97],  xlim = [-180, 180], ylim = [-90, 90])
+        
         z_max = max(data.z.values)
 
         #deal with orientation of graph for different vert types
@@ -351,7 +352,7 @@ class GUI_3D_obs_initial:
         #make color bar
         sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(0,max_value+1))
         sm._A = []
-        cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.05)
+        cbar = plt.colorbar(sm, ax=ax, orientation = 'horizontal', pad = 0.04)
 
         #set up color bar title according to plot type
         if self.val_type.get() == 'QC':
@@ -369,7 +370,7 @@ class GUI_3D_obs_initial:
             cbar.ax.set_xlabel(self.obs_menu.get(self.obs_menu.curselection()).split(" : ", 1)[1])
             
         ax.set_aspect('auto')
-
+        #ax.margins(0.5, tight = False)
         s= ttk.Style()
         s.theme_use('clam')
 

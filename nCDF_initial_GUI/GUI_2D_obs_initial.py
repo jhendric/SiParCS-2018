@@ -223,9 +223,7 @@ class GUI_2D_obs_initial:
         elif var == 'data_qc':
             unique, counts = np.unique(getattr(self, var).qc_DART.values, return_counts = True)
             count_dict = dict(zip(unique, counts))
-            print(count_dict)
             self.qc.set(value = [str(count_dict[val]) + " : " + str(self.qc_key[val]) for val in unique])
-            print(np.unique(getattr(self, var).qc_DART.values).size)
             
         #should work in class scope since menu is a self variable
         if (menu.get(0) == '['):

@@ -63,6 +63,14 @@ class GUIObsDiagInitial:
 
         self.obs_type_names = StringVar(value = obs_types_sparse)
 
+        regions = [self.reader.bytes_to_string(name) for name in self.original_data.region_names.values]
+
+        regions_sparse = [name.replace('[', '').replace(']', '').
+                            replace(',', '').replace('\'', '')
+                            for name in regions]
+
+        self.region_names = StringVar(value = regions_sparse)
+        
         self.forecast = None
         self.analysis = None
         self.level_type = None
@@ -75,7 +83,7 @@ class GUIObsDiagInitial:
         self.obs_frame.grid(column = 2, row = 1, sticky = "N, S, E, W")
         ttk.Label(self.obs_frame, text = "Observation Type Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
-                                height = 18, width = 40, exportselection = False)
+                                width = 40, exportselection = False)
         self.obs_menu.grid(column = 1, row = 2, rowspan = 1, sticky = "N, S, E, W")
         
         self.obs_menu.bind('<Return>', lambda event : self.populate('levels', self.level_menu, event))
@@ -97,7 +105,7 @@ class GUIObsDiagInitial:
         ttk.Label(self.level_frame, text = "Observation Level Selection").grid(column = 1,
                                                                                row = 1, sticky = "E, W")
         self.level_menu = Listbox(self.level_frame, listvariable = self.levels,
-                                  height = 18, width = 40, exportselection = False)
+                                  width = 40, exportselection = False)
         self.level_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
         self.populate('levels', self.level_menu)
         self.level_menu.selection_set(0)
@@ -108,9 +116,26 @@ class GUIObsDiagInitial:
         self.level_menu.configure(yscrollcommand = self.level_bar.set)
         self.level_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, E")
 
+        #region selection
+
+        self.region_frame = ttk.Frame(self.main_frame, padding = "2")
+        self.region_frame.grid(column = 2, row = 3, sticky = "N, S, E, W")
+        ttk.Label(self.region_frame, text = "Observation Region Selection").grid(column = 1,
+                                                                               row = 1, sticky = "E, W")
+        self.region_menu = Listbox(self.region_frame, listvariable = self.region_names,
+                                   width = 40, exportselection = False)
+        self.region_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
+        self.region_menu.selection_set(0)
+        self.region_menu.bind('<Return>', self.plot)
+        
+        #region scrollbar
+        self.region_bar = ttk.Scrollbar(self.region_frame, orient = VERTICAL, command = self.region_menu.yview)
+        self.region_menu.configure(yscrollcommand = self.region_bar.set)
+        self.region_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, E")
+        
         #plot button
         self.plot_button = ttk.Button(self.main_frame, text = "Plot", command = self.plot, padding = "2")
-        self.plot_button.grid(column = 2, row = 5, sticky = "N, S, E, W")
+        self.plot_button.grid(column = 2, row = 4, sticky = "N, S, E, W")
         
     def populate(self, variable_name, menu, event = None):
 
@@ -201,11 +226,20 @@ class GUIObsDiagInitial:
 
         forecast = self.reader.filter_single(forecast, ('copy', 'rmse'))
         analysis = self.reader.filter_single(analysis, ('copy', 'rmse'))
+
+        #narrow to one region
+        
+        forecast_region = self.reader.filter_single(forecast, ('region', int(self.region_menu.curselection()[0]) + 1))
+        analysis_region = self.reader.filter_single(analysis, ('region', int(self.region_menu.curselection()[0]) + 1))
+
+        possible_obs_region = self.reader.filter_single(possible_obs, ('region', int(self.region_menu.curselection()[0]) + 1))
+        used_obs_region = self.reader.filter_single(used_obs, ('region', int(self.region_menu.curselection()[0]) + 1))
+
         
         #need to change this to tolerate different numbers of subplots (regions)
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize = (8, 8))
+        fig, ax = plt.subplots(1, 1, figsize = (12, 8))
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
-        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
+        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 4, sticky = "N, S, E, W")
         self.main_frame.grid_columnconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(1, weight = 1)
 
@@ -213,92 +247,93 @@ class GUIObsDiagInitial:
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
-        
-        for index, ax in enumerate((ax1, ax2, ax3)):
 
-            forecast_region = forecast.where(forecast.region == index + 1, drop = True)
-            analysis_region = analysis.where(analysis.region == index + 1, drop = True)
-            possible_obs_region = possible_obs.where(possible_obs.region == index + 1, drop = True)
-            used_obs_region = used_obs.where(used_obs.region == index + 1, drop = True)
+        #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
 
-            #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
-            
-            forecast_mask = np.array(list(filter(lambda v: v == v, forecast_region.values)))
-            forecast_mask = ~np.isnan(forecast_region.values)
-            forecast_no_nans = forecast_region.values[forecast_mask]
-            forecast_times_no_nans = forecast_region.time.values[forecast_mask.flatten()]
-            
-            analysis_mask = ~np.isnan(analysis_region.values)
-            analysis_no_nans = analysis_region.values[analysis_mask]
-            analysis_times_no_nans = analysis_region.time.values[analysis_mask.flatten()]
+        forecast_mask = np.array(list(filter(lambda v: v == v, forecast_region.values)))
+        forecast_mask = ~np.isnan(forecast_region.values)
+        forecast_no_nans = forecast_region.values[forecast_mask]
+        forecast_times_no_nans = forecast_region.time.values[forecast_mask.flatten()]
 
-            #do not plot regions with no values
-            if forecast_no_nans.size == 0:
-                ax.text(0.5, 0.5, 'No valid rmse data in this region')
-                ax.set_title(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '     ' +
-                     'forecast: mean = ' + str(np.nanmean(forecast_region.values.flatten())) + '     ' +
-                     'analysis: mean = ' + str(np.nanmean(analysis_region.values.flatten())))
-                continue
-            
-            #plot both scatter and line for forecast and analysis to achieve connected appearance
-            ax.scatter(x = forecast_times_no_nans, y = forecast_no_nans,
-                       edgecolors = 'black', marker = 'x', s = 15)
-            ax.plot(forecast_times_no_nans,
-                    forecast_no_nans.flatten(), 'kx-', label = 'forecast')
-            ax.scatter(x = analysis_times_no_nans,
-                       y = analysis_no_nans,
-                       edgecolors = 'red', marker = 'o', s = 15, facecolors = 'none')
-            ax.plot(analysis_times_no_nans,
-                    analysis_no_nans.flatten(), 'ro-', mfc = 'none', label = 'analysis')
+        analysis_mask = ~np.isnan(analysis_region.values)
+        analysis_no_nans = analysis_region.values[analysis_mask]
+        analysis_times_no_nans = analysis_region.time.values[analysis_mask.flatten()]
 
-            #set min and max x limits to be wider than actual limits for a nicer plot
-            #pad x axis by 10% on both sides
-            pad_x_axis = .10 * (max(forecast_region.time.values) - min(forecast_region.time.values))
-            ax.set_xlim(((forecast_times_no_nans[0] - pad_x_axis).astype("M8[ms]")),
-                        (forecast_times_no_nans[-1] + pad_x_axis).astype("M8[ms]"))
-            
-            #pad y axis by 20% at top
-            y_max = max(np.nanmax(forecast_region.values.flatten()), np.nanmax(analysis_region.values.flatten()))
-            y_max = y_max + .20 * y_max
-            ax.set_ylim(0, y_max)
-
-            #add horizontal and vertical lines
-            for i in range(1, int(y_max)):
-                ax.axhline(y = i, ls = ':')
-
-            for time in ax.get_xticks():
-                ax.axvline(x = time, ls = ':')
-
-            
-            #subplot title
+        #do not plot regions with no values
+        if forecast_no_nans.size == 0:
+            ax.text(0.5, 0.5, 'No valid rmse data in this region')
             ax.set_title(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '     ' +
-                     'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
-                         'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
-            
-            
-            ax.set_ylabel(str(self.reader.bytes_to_string(self.original_data['region_names'].values[index])) + '\n' + 'rmse')
-            ax.legend(loc = 'upper left', framealpha = 0.25)
-            
-            
-            #need to basically plot two plots on top of each other to get 2 y scales
-            ax_twin = ax.twinx()
-            ax_twin.scatter(x = possible_obs_region.time.values, y = possible_obs_region.values,
-                            color = 'blue', marker = 'o', s = 15, facecolors = 'none')
-            ax_twin.scatter(x = used_obs_region.time.values, y = used_obs_region.values,
-                            color = 'blue', marker = 'x', s = 15)
+                 'forecast: mean = ' + str(np.nanmean(forecast_region.values.flatten())) + '     ' +
+                 'analysis: mean = ' + str(np.nanmean(analysis_region.values.flatten())))
+            return
 
-            y_max = max(max(possible_obs_region.values), max(used_obs_region.values))
-            y_max = y_max + .20 * y_max
-            
-            ax_twin.set_ylim(0, y_max)
-            ax_twin.set_ylabel('# of obs: o = poss, x = used', color = 'blue')
-            for tick in ax.get_xticklabels():
-                tick.set_rotation(45)
-            ax.tick_params(labelsize = 8)
-            
+        #plot both scatter and line for forecast and analysis to achieve connected appearance
+        ax.scatter(x = forecast_times_no_nans, y = forecast_no_nans,
+                   edgecolors = 'black', marker = 'x', s = 15)
+        ax.plot(forecast_times_no_nans,
+                forecast_no_nans.flatten(), 'kx-', label = 'forecast')
+        ax.scatter(x = analysis_times_no_nans,
+                   y = analysis_no_nans,
+                   edgecolors = 'red', marker = 'o', s = 15, facecolors = 'none')
+        ax.plot(analysis_times_no_nans,
+                analysis_no_nans.flatten(), 'ro-', mfc = 'none', label = 'analysis')
+
+        #set min and max x limits to be wider than actual limits for a nicer plot
+        #pad x axis by 10% on both sides
+        pad_x_axis = .10 * (max(forecast_region.time.values) - min(forecast_region.time.values))
+        ax.set_xlim(((forecast_times_no_nans[0] - pad_x_axis).astype("M8[ms]")),
+                    (forecast_times_no_nans[-1] + pad_x_axis).astype("M8[ms]"))
+
+        #pad y axis by 20% at top
+        y_max = max(np.nanmax(forecast_region.values.flatten()), np.nanmax(analysis_region.values.flatten()))
+        y_max = y_max + .20 * y_max
+        locs, labels = plt.yticks()
+        locs = np.append(locs, 0)
+        plt.yticks(locs)
+        ax.set_ylim(-.03*y_max, y_max)
+
+        #add horizontal and vertical lines
+        for i in range(1, int(y_max)):
+            ax.axhline(y = i, ls = ':')
+
+        for time in ax.get_xticks():
+            ax.axvline(x = time, ls = ':')
+
+
+        #subplot title
+        ax.set_title(str(obs_type) + ' @ ' + str(level) + '\n' +
+                     self.region_menu.get(self.region_menu.curselection()) + '     ' +
+                 'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
+                     'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
+
+
+        ax.set_ylabel(self.region_menu.get(self.region_menu.curselection()) + '\n' + 'rmse')
+        ax.legend(loc = 'upper left', framealpha = 0.25)
+
+
+        #need to basically plot two plots on top of each other to get 2 y scales
+        ax_twin = ax.twinx()
+        ax_twin.scatter(x = possible_obs_region.time.values, y = possible_obs_region.values,
+                        color = 'blue', marker = 'o', s = 15, facecolors = 'none')
+        ax_twin.scatter(x = used_obs_region.time.values, y = used_obs_region.values,
+                        color = 'blue', marker = 'x', s = 15)
+
+        y_max = max(max(possible_obs_region.values), max(used_obs_region.values))
+        y_max = y_max + .20 * y_max
+        
+        locs, labels = plt.yticks()
+        locs = np.append(locs, 0)
+        plt.yticks(locs)
+        ax_twin.set_ylim(-.03*y_max, y_max)
+        ax_twin.set_ylabel('# of obs: o = poss, x = used', color = 'blue')
+        for tick in ax_twin.get_yticklabels():
+            tick.set_color('blue')
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(45)
+        ax.tick_params(labelsize = 8)
+
         #need to add plot title and spacing adjustments
-        fig.suptitle(str(obs_type) + ' @ ' + str(level))
-        fig.subplots_adjust(hspace = 0.8)
+        fig.tight_layout(rect=[0.05, 0.1, 0.95, 0.9])
 
 
 def main(diag):
@@ -313,7 +348,6 @@ def main(diag):
     root = Tk()
     root.title("RMSE Time Evolution Plotter")
     widg = GUIObsDiagInitial(root, 0, 0, diag)
-    widg.plot()
     root.mainloop()
 
 if __name__ == '__main__':

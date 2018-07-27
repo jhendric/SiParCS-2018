@@ -145,9 +145,6 @@ class GUIVertProf:
         #narrow to one region
         forecast_region = self.reader.filter_single(forecast, ('region', int(self.region_menu.curselection()[0]) + 1))
         analysis_region = self.reader.filter_single(analysis, ('region', int(self.region_menu.curselection()[0]) + 1))
-        
-        print('forecast: ', forecast_region)
-        print('analysis: ', analysis_region)
 
         possible_obs = self.reader.filter_single(forecast_region, ('copy', 'Nposs'))
         used_obs = self.reader.filter_single(forecast_region, ('copy', 'Nused'))
@@ -165,17 +162,17 @@ class GUIVertProf:
 
         forecast_levels = forecast_region[level_type]
         analysis_levels = analysis_region[level_type]
-        
+
         fig, ax = plt.subplots(1, 1, figsize = (8, 8))
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
-        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
+        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 4, sticky = "N, S, E, W")
         self.main_frame.grid_columnconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(1, weight = 1)
 
         #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
-        self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
+        self.toolbar_frame.grid(column = 1, row = 5, sticky = "N, S, E, W")
         
         #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
         
@@ -209,13 +206,21 @@ class GUIVertProf:
         #set min and max y limits to be wider than actual limits for a nicer plot
         #pad y axis by 10% on both sides
         pad_y_axis = .10 * (max(forecast_levels.values) - min(forecast_levels.values))
-        ax.set_ylim((forecast_levels_no_nans[0] - pad_y_axis),
-                    (forecast_levels_no_nans[-1] + pad_y_axis))
         
-        #pad x axis by 20% at right
-        x_max = max(np.nanmax(forecast_region.values.flatten()), np.nanmax(analysis_region.values.flatten()))
-        x_max = x_max + .20 * x_max
-        ax.set_xlim(0, x_max)
+        if forecast_levels.values[-1] > forecast_levels.values[0]:
+            ax.set_ylim((forecast_levels_no_nans[0] -  pad_y_axis),
+                        (forecast_levels_no_nans[-1] +  pad_y_axis))
+        else:
+            ax.set_ylim((forecast_levels_no_nans[0] + pad_y_axis,
+                         forecast_levels_no_nans[-1] - pad_y_axis))
+        
+        #pad x axis by 20% on right side
+        x_max = max(np.nanmax(forecast_region.values.flatten()),
+                         np.nanmax(analysis_region.values.flatten()))
+        x_min = min(np.nanmin(forecast_region.values.flatten()),
+                         np.nanmin(analysis_region.values.flatten()))
+        pad_x_axis = .10 * (x_max - x_min)
+        ax.set_xlim(0, x_max + pad_x_axis)
 
         #add horizontal and vertical lines
         for i in range(1, int(x_max)):
@@ -235,15 +240,25 @@ class GUIVertProf:
         ax_twin.scatter(y = used_obs[level_type].values, x = used_obs.values,
                         color = 'blue', marker = 'x', s = 15)
 
-        x_max = max(max(possible_obs.values.flatten()), max(used_obs.values.flatten()))
-        x_max = x_max + .20 * x_max
-
-        ax_twin.set_xlim(0, x_max)
+        x_max = max(max(possible_obs.values.flatten()),
+                    max(used_obs.values.flatten()))
+        x_min = min(min(possible_obs.values.flatten()),
+                    min(used_obs.values.flatten()))
+        locs, labels = plt.xticks()
+        locs = np.append(locs, 0)
+        plt.xticks(locs)
+        pad_x_axis = .10 * (x_max - x_min)
+        ax_twin.set_xlim(-.03 * x_max, x_max + pad_x_axis)
         ax_twin.set_xlabel('# of obs: o = poss, x = used', color = 'blue')
+        for tick in ax_twin.get_xticklabels():
+            tick.set_color('blue')
         
         fig.suptitle(str(obs_type) + '\n' + self.region_menu.get(self.region_menu.curselection()) + '     ' +
                      'forecast: mean = ' + str(round(np.nanmean(forecast_region.values.flatten()), 5)) + '     ' +
                      'analysis: mean = ' + str(round(np.nanmean(analysis_region.values.flatten()), 5)))
+        
+        #make sure title doesn't get cutoff
+        fig.tight_layout(rect=[0, 0.03, 1, 0.92])
 
 
 def main(diag):
