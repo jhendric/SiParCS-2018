@@ -16,7 +16,7 @@ from read_diag import ReadDiag
 np.set_printoptions(threshold = np.nan) #without this setting, self.levels will be incomplete
 
 
-class GUIObsDiagInitial:
+class GUIObsDiag:
 
     '''
     
@@ -40,17 +40,21 @@ class GUIObsDiagInitial:
         self.original_data = self.reader.full_data
 
         self.window = window
+        
+        #resizing
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
 
         #a mainframe
         self.main_frame = ttk.Frame(self.window, padding = "8")
-        self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W") 
+        self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W")
+
+        #resizing
         self.main_frame.grid_columnconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_rowconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_columnconfigure(1, weight = 20)
         self.main_frame.grid_columnconfigure(2, weight = 1)
-        self.main_frame.grid_rowconfigure(1, weight = 1) #weights for whole grid
+        self.main_frame.grid_rowconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(2, weight = 1)
         self.main_frame.grid_rowconfigure(3, weight = 1)
         self.main_frame.grid_rowconfigure(4, weight = 1)
@@ -104,7 +108,7 @@ class GUIObsDiagInitial:
         self.obs_menu.configure(yscrollcommand = self.obs_bar.set)
         self.obs_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, W")
 
-
+        #resizing
         self.obs_frame.grid_columnconfigure(1, weight = 1)
         self.obs_frame.grid_columnconfigure(2, weight = 1)
         self.obs_frame.grid_rowconfigure(1, weight = 1)
@@ -130,6 +134,7 @@ class GUIObsDiagInitial:
         self.level_menu.configure(yscrollcommand = self.level_bar.set)
         self.level_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, W")
 
+        #resizing
         self.level_frame.grid_columnconfigure(1, weight = 1)
         self.level_frame.grid_columnconfigure(2, weight = 1)
         self.level_frame.grid_rowconfigure(1, weight = 1)
@@ -152,6 +157,7 @@ class GUIObsDiagInitial:
         self.region_menu.configure(yscrollcommand = self.region_bar.set)
         self.region_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, E, W")
 
+        #resizing
         self.region_frame.grid_rowconfigure(1, weight = 1)
         self.region_frame.grid_rowconfigure(2, weight = 1)
         self.region_frame.grid_columnconfigure(1, weight = 1)
@@ -271,8 +277,11 @@ class GUIObsDiagInitial:
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 5, sticky = "N, S, E, W")
         self.toolbar.grid(column = 1, row = 1, sticky = "N, S, E, W")
+
+        #resizing
         self.toolbar_frame.grid_columnconfigure(1, weight = 1)
         self.toolbar_frame.grid_rowconfigure(1, weight = 1)
+        
         #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
 
         forecast_mask = np.array(list(filter(lambda v: v == v, forecast_region.values)))
@@ -372,7 +381,7 @@ def main(diag):
     
     root = Tk()
     root.title("RMSE Time Evolution Plotter")
-    widg = GUIObsDiagInitial(root, 0, 0, diag)
+    widg = GUIObsDiag(root, 0, 0, diag)
     root.mainloop()
 
 if __name__ == '__main__':

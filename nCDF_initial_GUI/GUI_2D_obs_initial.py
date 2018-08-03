@@ -22,7 +22,7 @@ from plot_2D_obs_initial import plot_2D_obs
 np.set_printoptions(threshold=np.nan) #without this setting, self.levels will be incomplete
 
 
-class GUI_2D_obs_initial:
+class GUI2DObs:
     '''
     
     Incorporates plot_2D_obs_initial.py into a GUI for plotting observation QC values in 2D.
@@ -50,11 +50,13 @@ class GUI_2D_obs_initial:
 
         #a mainframe
         self.main_frame = ttk.Frame(self.window, padding = "8")
-        self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W") 
-        self.main_frame.grid_columnconfigure(1, weight = 20) #weights for whole grid
+        self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W")
+
+        #resizing
+        self.main_frame.grid_columnconfigure(1, weight = 20) 
         self.main_frame.grid_columnconfigure(2, weight = 1)
         self.main_frame.grid_rowconfigure(0, weight = 1)
-        self.main_frame.grid_rowconfigure(1, weight = 1) #weights for whole grid
+        self.main_frame.grid_rowconfigure(1, weight = 1) 
         self.main_frame.grid_rowconfigure(2, weight = 1)
         self.main_frame.grid_rowconfigure(3, weight = 1)
         self.main_frame.grid_rowconfigure(4, weight = 1)
@@ -97,6 +99,7 @@ class GUI_2D_obs_initial:
         self.obs_menu.configure(yscrollcommand = self.obs_bar.set)
         self.obs_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, W")
 
+        #resizing
         self.obs_frame.grid_columnconfigure(1, weight = 1)
         self.obs_frame.grid_columnconfigure(2, weight = 1)
         self.obs_frame.grid_rowconfigure(1, weight = 1)
@@ -122,6 +125,7 @@ class GUI_2D_obs_initial:
         self.level_menu.configure(yscrollcommand = self.level_bar.set)
         self.level_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, W")
 
+        #resizing
         self.level_frame.grid_rowconfigure(1, weight = 1)
         self.level_frame.grid_rowconfigure(2, weight = 1)
         self.level_frame.grid_columnconfigure(1, weight = 1)
@@ -185,7 +189,8 @@ class GUI_2D_obs_initial:
         self.qc_bar = ttk.Scrollbar(self.qc_frame, orient = HORIZONTAL, command = self.qc_menu.xview)
         self.qc_menu.configure(xscrollcommand = self.qc_bar.set)
         self.qc_bar.grid(column = 1, row = 3, rowspan = 1, sticky = "N, S, E, W")
-        
+
+        #resizing
         self.qc_frame.grid_rowconfigure(1, weight = 1)
         self.qc_frame.grid_rowconfigure(2, weight = 1)
         self.qc_frame.grid_columnconfigure(1, weight = 1)
@@ -283,8 +288,11 @@ class GUI_2D_obs_initial:
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar.grid(column = 1, row = 1, sticky = "S, E, W")
         self.toolbar_frame.grid(column = 1, row = 3, sticky = "S, E, W")
+
+        #resizing
         self.toolbar_frame.grid_columnconfigure(1, weight = 1)
         self.toolbar_frame.grid_rowconfigure(1, weight = 1)
+        
         #disable part of the coordinate display functionality, else everything flickers
         #ax.format_coord = lambda x, y: ''
         
@@ -352,7 +360,7 @@ def main(obs_sequence):
     
     root = Tk()
     root.title("2D Observation Plotter")
-    widg = GUI_2D_obs_initial(root, 0, 0, obs_sequence)
+    widg = GUI2DObs(root, 0, 0, obs_sequence)
     #widg.plot_2D()
     root.style = ttk.Style()
     root.style.theme_use('clam')

@@ -38,17 +38,21 @@ class GUIVertProf:
         self.original_data = self.reader.full_data
 
         self.window = window
+
+        #resizing
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
 
         #a mainframe
         self.main_frame = ttk.Frame(self.window, padding = "8")
-        self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W") 
+        self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W")
+
+        #resizing
         self.main_frame.grid_columnconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_rowconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_columnconfigure(1, weight = 20)
         self.main_frame.grid_columnconfigure(2, weight = 1)
-        self.main_frame.grid_rowconfigure(1, weight = 1) #weights for whole grid
+        self.main_frame.grid_rowconfigure(1, weight = 1)
         self.main_frame.grid_rowconfigure(2, weight = 1)
         self.main_frame.grid_rowconfigure(3, weight = 1)
         self.main_frame.grid_rowconfigure(4, weight = 1)
@@ -107,6 +111,7 @@ class GUIVertProf:
         self.obs_menu.selection_set(0)
         self.obs_menu.event_generate('<<ListboxSelect>>')
 
+        #resizing
         self.obs_frame.grid_columnconfigure(1, weight = 1)
         self.obs_frame.grid_columnconfigure(2, weight = 1)
         self.obs_frame.grid_rowconfigure(1, weight = 1)
@@ -130,6 +135,7 @@ class GUIVertProf:
         self.region_menu.selection_set(0)
         self.region_menu.bind('<Return>', self.plot)
 
+        #resizing
         self.region_frame.grid_columnconfigure(1, weight = 1)
         self.region_frame.grid_columnconfigure(2, weight = 1)
         self.region_frame.grid_rowconfigure(1, weight = 1)
@@ -193,6 +199,7 @@ class GUIVertProf:
         self.toolbar_frame.grid(column = 1, row = 5, sticky = "N, S, E, W")
         self.toolbar.grid(column = 1, row = 1, sticky = "N, S ,E , W")
 
+        #resizing
         self.toolbar_frame.grid_columnconfigure(1, weight = 1)
         self.toolbar_frame.grid_rowconfigure(1, weight = 1)
         

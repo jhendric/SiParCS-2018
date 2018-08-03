@@ -52,14 +52,17 @@ class GUIInnov:
 
         #No convention for z coordinate among different files. Whatever is found is stored here
         self.level_type = None
-        
+
+        #resizing
         self.window = window
         self.window.grid_columnconfigure(0, weight = 1)
         self.window.grid_rowconfigure(0, weight = 1)
 
         #a mainframe
         self.main_frame = ttk.Frame(self.window, padding = "8")
-        self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W") 
+        self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W")
+
+        #resizing
         self.main_frame.grid_columnconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_rowconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_columnconfigure(1, weight = 20)
@@ -97,7 +100,8 @@ class GUIInnov:
         self.data_bar = ttk.Scrollbar(self.data_frame, orient = VERTICAL, command = self.data_menu.yview)
         self.data_menu.configure(yscrollcommand = self.data_bar.set)
         self.data_bar.grid(column = 2, row = 2,  sticky = "N, S, W")
-        
+
+        #resizing
         self.data_frame.grid_columnconfigure(1, weight = 1)
         self.data_frame.grid_columnconfigure(2, weight = 1)
         self.data_frame.grid_rowconfigure(1, weight = 1)
@@ -120,6 +124,7 @@ class GUIInnov:
         self.level_menu.selection_set(0)
         self.level_menu.bind('<Return>', self.plot)
 
+        #resizing
         self.level_frame.grid_columnconfigure(1, weight = 1)
         self.level_frame.grid_columnconfigure(2, weight = 1)
         self.level_frame.grid_rowconfigure(1, weight = 1)
@@ -215,7 +220,8 @@ class GUIInnov:
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 3, sticky = "N, S, E, W")
         self.toolbar.grid(column = 1, row = 1, sticky = "N, S ,E , W")
-        
+
+        #resizing
         self.toolbar_frame.grid_columnconfigure(1, weight = 1)
         self.toolbar_frame.grid_rowconfigure(1, weight = 1)
         
