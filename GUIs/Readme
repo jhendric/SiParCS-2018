@@ -1,0 +1,5 @@
+Basic usage instructions:
+
+GUIs are run from command line using "python GUINAME.py FILEPATH" (the innovation GUI needs two files, an initial and a final).
+
+When using the selection menus in the GUIs, be sure to hit enter when you select new options in order to populate the next menu with correct options.
