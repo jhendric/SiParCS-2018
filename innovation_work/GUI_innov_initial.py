@@ -62,6 +62,11 @@ class GUIInnov:
         self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W") 
         self.main_frame.grid_columnconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_rowconfigure(0, weight = 1) #weights for whole grid
+        self.main_frame.grid_columnconfigure(1, weight = 20)
+        self.main_frame.grid_columnconfigure(2, weight = 1)
+        self.main_frame.grid_rowconfigure(1, weight = 1) #weights for whole grid
+        self.main_frame.grid_rowconfigure(2, weight = 1)
+        self.main_frame.grid_rowconfigure(3, weight = 1)
 
         data_types = [name for name in self.final.data_vars]
 
@@ -79,7 +84,8 @@ class GUIInnov:
         self.data_frame.grid(column = 2, row = 1, sticky = "N, S, E, W")
         ttk.Label(self.data_frame, text = "State Variable Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.data_menu = Listbox(self.data_frame, listvariable = self.data_type_names,
-                                height = 18, width = 40, exportselection = False)
+                                 #height = 18, width = 40,
+                                 exportselection = False)
         self.data_menu.grid(column = 1, row = 2, rowspan = 1, sticky = "N, S, E, W")
         
         self.data_menu.bind('<Return>', lambda event : self.populate('levels', self.level_menu, event))
@@ -90,7 +96,13 @@ class GUIInnov:
         #data type scrollbar
         self.data_bar = ttk.Scrollbar(self.data_frame, orient = VERTICAL, command = self.data_menu.yview)
         self.data_menu.configure(yscrollcommand = self.data_bar.set)
-        self.data_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, E")
+        self.data_bar.grid(column = 2, row = 2,  sticky = "N, S, W")
+        
+        self.data_frame.grid_columnconfigure(1, weight = 1)
+        self.data_frame.grid_columnconfigure(2, weight = 1)
+        self.data_frame.grid_rowconfigure(1, weight = 1)
+        self.data_frame.grid_rowconfigure(2, weight = 1)
+        
 
         #level selection
 
@@ -101,20 +113,26 @@ class GUIInnov:
         ttk.Label(self.level_frame, text = "Data Level Selection").grid(column = 1,
                                                                                row = 1, sticky = "E, W")
         self.level_menu = Listbox(self.level_frame, listvariable = self.levels,
-                                  height = 18, width = 40, exportselection = False)
+                                  #height = 18, width = 40,
+                                  exportselection = False)
         self.level_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
         self.populate('levels', self.level_menu)
         self.level_menu.selection_set(0)
         self.level_menu.bind('<Return>', self.plot)
+
+        self.level_frame.grid_columnconfigure(1, weight = 1)
+        self.level_frame.grid_columnconfigure(2, weight = 1)
+        self.level_frame.grid_rowconfigure(1, weight = 1)
+        self.level_frame.grid_rowconfigure(2, weight = 1)
         
         #level scrollbar
         self.level_bar = ttk.Scrollbar(self.level_frame, orient = VERTICAL, command = self.level_menu.yview)
         self.level_menu.configure(yscrollcommand = self.level_bar.set)
-        self.level_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, E")
+        self.level_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, W")
 
         #plot button
         self.plot_button = ttk.Button(self.main_frame, text = "Plot", command = self.plot, padding = "2")
-        self.plot_button.grid(column = 2, row = 5, sticky = "N, S, E, W")
+        self.plot_button.grid(column = 2, row = 3, sticky = "N, S, E, W")
         
         
     def populate(self, variable_name, menu, event = None):
@@ -185,19 +203,22 @@ class GUIInnov:
 
         '''
         
-        fig = Figure(figsize = (12, 12))
+        fig = Figure(figsize = (12, 8))
         ax = fig.add_axes([0.03, 0.03, 0.95, 0.95], projection = ccrs.PlateCarree())
         #cax = fig.add_axes([0.955, 0.03, 0.99, 0.99])
         
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
-        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
-        self.main_frame.grid_columnconfigure(1, weight = 1)
-        self.main_frame.grid_rowconfigure(1, weight = 1)
+        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 2, sticky = "N, S, E, W")
 
         #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
-        self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E, W")
+        self.toolbar_frame.grid(column = 1, row = 3, sticky = "N, S, E, W")
+        self.toolbar.grid(column = 1, row = 1, sticky = "N, S ,E , W")
+        
+        self.toolbar_frame.grid_columnconfigure(1, weight = 1)
+        self.toolbar_frame.grid_rowconfigure(1, weight = 1)
+        
         
         var_name = self.data_menu.get(self.data_menu.curselection())
         if self.level_menu.get(self.level_menu.curselection()).split(':')[0] == 'N/A':

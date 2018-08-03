@@ -133,7 +133,7 @@ class GUI_2D_obs_initial:
         
         self.qc_frame = ttk.Frame(self.main_frame, padding = "2")
         self.qc_frame.grid(column=2, row = 3, sticky = "N, S, E, W")
-        ttk.Label(self.qc_frame, text = "DART QC Value Selection").grid(column = 1, row = 1, sticky = "E, W")
+        ttk.Label(self.qc_frame, text = "DART QC Value Selection").grid (column = 1, row = 1, sticky = "E, W")
         self.qc_menu = Listbox(self.qc_frame, listvariable = self.qc, #height = 8, width = 40,
                                selectmode = "extended", exportselection = False)
         self.qc_menu.grid(column = 1, row = 2, sticky ="N, S, E, W")
@@ -276,12 +276,15 @@ class GUI_2D_obs_initial:
         fig = Figure(figsize = (12,8))
         ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
-        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 3, sticky = "N, S, E, W")
+        canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 2, sticky = "N, S, E, W")
 
         #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
-        self.toolbar_frame.grid(column = 1, row = 4, sticky = "N, S, E")
+        self.toolbar.grid(column = 1, row = 1, sticky = "S, E, W")
+        self.toolbar_frame.grid(column = 1, row = 3, sticky = "S, E, W")
+        self.toolbar_frame.grid_columnconfigure(1, weight = 1)
+        self.toolbar_frame.grid_rowconfigure(1, weight = 1)
         #disable part of the coordinate display functionality, else everything flickers
         #ax.format_coord = lambda x, y: ''
         

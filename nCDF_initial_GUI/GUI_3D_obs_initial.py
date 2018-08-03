@@ -59,7 +59,14 @@ class GUI_3D_obs_initial:
         self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W") 
         self.main_frame.grid_columnconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_rowconfigure(0, weight = 1) #weights for whole grid
-
+        self.main_frame.grid_columnconfigure(1, weight = 20)
+        self.main_frame.grid_columnconfigure(2, weight = 1)
+        self.main_frame.grid_rowconfigure(1, weight = 1) #weights for whole grid
+        self.main_frame.grid_rowconfigure(2, weight = 1)
+        self.main_frame.grid_rowconfigure(3, weight = 1)
+        self.main_frame.grid_rowconfigure(4, weight = 1)
+        self.main_frame.grid_rowconfigure(5, weight = 1)
+        
         self.style = ttk.Style()
 
         #obs parameter variables
@@ -84,8 +91,8 @@ class GUI_3D_obs_initial:
         self.obs_frame = ttk.Frame(self.main_frame, padding = "2")
         self.obs_frame.grid(column = 2, row = 1, sticky = "N, S, E, W")
         ttk.Label(self.obs_frame, text = "Observation Type Selection").grid(column = 1, row = 1, sticky = "E, W")
-        self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
-                                height = 18, width = 40, exportselection = False)
+        self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names, #height = 18, width = 40,
+                                exportselection = False)
         self.obs_menu.grid(column = 1, row = 2, rowspan = 1, sticky = "N, S, E, W")
         
         self.obs_menu.bind('<Return>', lambda event : self.populate('times', self.times_menu, event))
@@ -96,8 +103,14 @@ class GUI_3D_obs_initial:
         #obs scrollbar
         self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
         self.obs_menu.configure(yscrollcommand = self.obs_bar.set)
-        self.obs_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, E")
+        self.obs_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, W")
 
+        self.obs_frame.grid_columnconfigure(1, weight = 1)
+        self.obs_frame.grid_columnconfigure(2, weight = 1)
+        self.obs_frame.grid_rowconfigure(1, weight = 1)
+        self.obs_frame.grid_rowconfigure(2, weight = 1)
+
+        
 
         #time selection
         self.times = StringVar()
@@ -105,16 +118,19 @@ class GUI_3D_obs_initial:
         self.times_frame = ttk.Frame(self.main_frame, padding = "2")
         self.times_frame.grid(column = 2, row = 2, sticky = "N, S, E, W")
         ttk.Label(self.times_frame, text = "Observation Times Selection").grid(column = 1, row = 1, sticky = "E, W")
-        self.times_menu = Listbox(self.times_frame, listvariable = self.times,
-                                 height = 18, width = 40, selectmode = "extended", exportselection = False)
+        self.times_menu = Listbox(self.times_frame, listvariable = self.times, #height = 18, width = 40,
+                                  selectmode = "extended", exportselection = False)
         self.times_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
         self.times_menu.bind('<Return>', lambda event : self.populate('qc', self.qc_menu, event))
 
         self.times_bar = ttk.Scrollbar(self.times_frame, orient = VERTICAL, command = self.times_menu.yview)
         self.times_menu.configure(yscrollcommand = self.times_bar.set)
-        self.times_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, E")
+        self.times_bar.grid(column = 2, row = 2, rowspan = 2, sticky = "N, S, W")
         
-        
+        self.times_frame.grid_columnconfigure(1, weight = 1)
+        self.times_frame.grid_columnconfigure(2, weight = 1)
+        self.times_frame.grid_rowconfigure(1, weight = 1)
+        self.times_frame.grid_rowconfigure(2, weight = 1)
         
         #qc selection
 
@@ -123,14 +139,20 @@ class GUI_3D_obs_initial:
         self.qc_frame = ttk.Frame(self.main_frame, padding = "2")
         self.qc_frame.grid(column=2, row = 3, sticky = "N, S, E, W")
         ttk.Label(self.qc_frame, text = "DART QC Value Selection").grid(column = 1, row = 1, sticky = "E, W")
-        self.qc_menu = Listbox(self.qc_frame, listvariable = self.qc,
-                               height = 8, width = 40, selectmode = "extended", exportselection = False)
+        self.qc_menu = Listbox(self.qc_frame, listvariable = self.qc, #height = 8, width = 40,
+                               selectmode = "extended", exportselection = False)
         self.qc_menu.grid(column = 1, row = 2, sticky ="N, S, E, W")
                 
         #qc scrollbar
         self.qc_bar = ttk.Scrollbar(self.qc_frame, orient = HORIZONTAL, command = self.qc_menu.xview)
         self.qc_menu.configure(xscrollcommand = self.qc_bar.set)
         self.qc_bar.grid(column = 1, row = 3, rowspan = 1, sticky ="N, S, E, W")
+
+        self.qc_frame.grid_rowconfigure(1, weight = 1)
+        self.qc_frame.grid_rowconfigure(2, weight = 1)
+        self.qc_frame.grid_rowconfigure(3, weight = 1)
+        self.qc_frame.grid_columnconfigure(1, weight = 1)
+        self.qc_frame.grid_columnconfigure(2, weight = 1)
         
         #for use in populating and clearing menus (in populate function)
         self.data_obs_types = 1
@@ -186,10 +208,16 @@ class GUI_3D_obs_initial:
                                           value = "Observation value")
         self.val_button.grid(column = 1, row = 3, sticky = "N, S, E, W")
 
+        self.fill_frame.rowconfigure(1, weight = 1)
+        self.fill_frame.rowconfigure(2, weight = 1)
+        self.fill_frame.rowconfigure(3, weight = 1)
+        self.fill_frame.columnconfigure(1, weight = 1)
+        
         #plot button
         self.plot_button = ttk.Button(self.main_frame, text = "Plot", command = self.plot_3D, padding = "2")
         self.plot_button.grid(column = 2, row = 5, sticky = "N, S, E, W")
 
+        
         
         #for plotting later
         self.markers = ['o', 'v', 'H', 'D', '^', '<', '8',
@@ -274,17 +302,18 @@ class GUI_3D_obs_initial:
         qc = [np.int64(self.qc_menu.get(val).split(": ", 1)[1][0]) for val in self.qc_menu.curselection()]
         
         #make figure and canvas to draw on
-        fig = Figure(figsize = (12,8))
+        fig = Figure(figsize = (12, 8))
         #ax = fig.add_axes([0.01, 0.01, 0.98, 0.98], projection = ccrs.PlateCarree())
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
         canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 4, sticky = "N, S, E, W")
-        self.main_frame.grid_columnconfigure(1, weight = 1)
-        self.main_frame.grid_rowconfigure(1, weight = 1)
         
         #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 5, sticky = "N, S, E, W")
+        self.toolbar.grid(column = 1, row = 1, sticky = "N, S, E, W")
+        self.toolbar_frame.grid_columnconfigure(1, weight = 1)
+        self.toolbar_frame.grid_rowconfigure(1, weight = 1)
         #disable part of the coordinate display functionality, else everything flickers (may need for smaller window)
         #ax.format_coord = lambda x, y: ''
         

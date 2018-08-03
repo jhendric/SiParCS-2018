@@ -46,7 +46,14 @@ class GUIVertProf:
         self.main_frame.grid(column = grid_col, row = grid_row, sticky = "N, S, E, W") 
         self.main_frame.grid_columnconfigure(0, weight = 1) #weights for whole grid
         self.main_frame.grid_rowconfigure(0, weight = 1) #weights for whole grid
-
+        self.main_frame.grid_columnconfigure(1, weight = 20)
+        self.main_frame.grid_columnconfigure(2, weight = 1)
+        self.main_frame.grid_rowconfigure(1, weight = 1) #weights for whole grid
+        self.main_frame.grid_rowconfigure(2, weight = 1)
+        self.main_frame.grid_rowconfigure(3, weight = 1)
+        self.main_frame.grid_rowconfigure(4, weight = 1)
+        self.main_frame.grid_rowconfigure(5, weight = 1)
+        
         #get observation type names
         #'comment' marks the beginning of the list of observation type names
         start_index = list(self.original_data.attrs).index('comment') + 1
@@ -91,7 +98,8 @@ class GUIVertProf:
         self.obs_frame.grid(column = 2, row = 1, sticky = "N, S, E, W")
         ttk.Label(self.obs_frame, text = "Observation Type Selection").grid(column = 1, row = 1, sticky = "E, W")
         self.obs_menu = Listbox(self.obs_frame, listvariable = self.obs_type_names,
-                                height = 18, width = 40, exportselection = False)
+                                #height = 18, width = 40,
+                                exportselection = False)
         self.obs_menu.grid(column = 1, row = 2, rowspan = 1, sticky = "N, S, E, W")
         
         self.obs_menu.bind('<Return>', self.plot)
@@ -99,11 +107,16 @@ class GUIVertProf:
         self.obs_menu.selection_set(0)
         self.obs_menu.event_generate('<<ListboxSelect>>')
 
+        self.obs_frame.grid_columnconfigure(1, weight = 1)
+        self.obs_frame.grid_columnconfigure(2, weight = 1)
+        self.obs_frame.grid_rowconfigure(1, weight = 1)
+        self.obs_frame.grid_rowconfigure(2, weight = 1)
+        
         #obs scrollbar
         self.obs_bar = ttk.Scrollbar(self.obs_frame, orient = VERTICAL, command = self.obs_menu.yview)
         self.obs_menu.configure(yscrollcommand = self.obs_bar.set)
         self.obs_bar.grid(column = 2, row = 2, rowspan = 2,  sticky = "N, S, E")
-
+        
         #region selection
 
         self.region_frame = ttk.Frame(self.main_frame, padding = "2")
@@ -111,10 +124,16 @@ class GUIVertProf:
         ttk.Label(self.region_frame, text = "Observation Region Selection").grid(column = 1,
                                                                                row = 1, sticky = "E, W")
         self.region_menu = Listbox(self.region_frame, listvariable = self.region_names,
-                                  height = 18, width = 40, exportselection = False)
+                                  #height = 18, width = 40,
+                                   exportselection = False)
         self.region_menu.grid(column = 1, row = 2, sticky = "N, S, E, W")
         self.region_menu.selection_set(0)
         self.region_menu.bind('<Return>', self.plot)
+
+        self.region_frame.grid_columnconfigure(1, weight = 1)
+        self.region_frame.grid_columnconfigure(2, weight = 1)
+        self.region_frame.grid_rowconfigure(1, weight = 1)
+        self.region_frame.grid_rowconfigure(2, weight = 1)
         
         #region scrollbar
         self.region_bar = ttk.Scrollbar(self.region_frame, orient = VERTICAL, command = self.region_menu.yview)
@@ -166,13 +185,17 @@ class GUIVertProf:
         fig, ax = plt.subplots(1, 1, figsize = (8, 8))
         canvas = FigureCanvasTkAgg(fig, master = self.main_frame)
         canvas.get_tk_widget().grid(column = 1, row = 1, rowspan = 4, sticky = "N, S, E, W")
-        self.main_frame.grid_columnconfigure(1, weight = 1)
-        self.main_frame.grid_rowconfigure(1, weight = 1)
+        
 
         #have to set up a separate toolbar frame because toolbar doesn't like gridding with others
         self.toolbar_frame = ttk.Frame(self.main_frame)
         self.toolbar = NavigationToolbar2TkAgg(canvas, self.toolbar_frame)
         self.toolbar_frame.grid(column = 1, row = 5, sticky = "N, S, E, W")
+        self.toolbar.grid(column = 1, row = 1, sticky = "N, S ,E , W")
+
+        self.toolbar_frame.grid_columnconfigure(1, weight = 1)
+        self.toolbar_frame.grid_rowconfigure(1, weight = 1)
+        
         
         #get rid of nan values by getting masks of only valid values, then indexing into them during plotting
         
