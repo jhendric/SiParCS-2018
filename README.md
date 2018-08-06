@@ -40,36 +40,6 @@ For the tutorials, you will also need
 It is also recommended to install `tqdm` (e.g. `pip install tqdm`).
 
 
-<!--
-Methods
-------------
-References provided at bottom
-
-Method name                                            | Literature RMSE results reproduced
------------------------------------------------------- | ---------------------------------------
-EnKF <sup>1</sup>                                      | Sakov and Oke (2008)
-EnKF-N                                                 | Bocquet (2012), (2015)
-EnKS, EnRTS                                            | Raanes (2016a)
-iEnKS (and -N)                                         | Sakov (2012), Bocquet (2012), (2014)
-LETKF, local & serial EAKF                             | Bocquet (2011)
-Sqrt. model noise methods                              | Raanes (2015)
-Particle filter (bootstrap) <sup>2</sup>               | Bocquet (2010)
-Optimal/implicit Particle filter  <sup>2</sup>         | "
-NETF                                                   | Tödter (2015), Wiljes (2017)
-Rank histogram filter (RHF)                            | Anderson (2010)
-Extended KF                                            | Raanes (2016b)
-Optimal interpolation                                  | "
-Climatology                                            | "
-3D-Var                                                 | 
-
-<sup>1</sup>: Stochastic, DEnKF (i.e. half-update), ETKF (i.e. sym. sqrt.).  
-Tuned with inflation and "random, orthogonal rotations".  
-<sup>2</sup>: Resampling: multinomial (including systematic/universal and residual).  
-The particle filter is tuned with "effective-N monitoring", "regularization/jittering" strength, and more.
-
--->
-
-
 
 Models
 ------------
