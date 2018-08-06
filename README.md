@@ -111,12 +111,6 @@ What it can't do
 
 How to
 ------------------------------------------------
-<!--
-DAPPER is like a *set of templates* (not a framework);
-do not hesitate make your own scripts and functions
-(instead of squeezing everything into standardized configuration files).
--->
-
 
 <!--
 Alternative projects
