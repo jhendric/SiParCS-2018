@@ -140,7 +140,7 @@ DAPPER may be situated somewhere in the middle.
 
 TODO
 ------------------------------------------------
-* Reorg file structure
+* Reorganize file structure
 * Turn into package?
 * Simplify time management?
 * Use pandas for stats time series?
